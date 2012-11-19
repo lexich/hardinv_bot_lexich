@@ -26,10 +26,11 @@ class Planet(object):
     self.id = obj["@id"]
     self.planets = planets
     planets[self.id] = self
-    self.owner = obj["owner"]["#text"]
-    self.type = obj["type"]["#text"]
-    self.droids = int(obj["droids"]["#text"])
-    self._neighbours = map(lambda neighbour: neighbour["#text"], obj["neighbours"])
+    self.owner = obj["owner"]
+    self.type = obj["type"]
+    self.droids = int(obj["droids"])
+    self._neighbours = map(lambda neighbour: neighbour, obj["neighbours"]["neighbour"])
+    self._neighbours_cache = None
 
   @property
   def neighbours(self):

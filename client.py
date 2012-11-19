@@ -5,6 +5,7 @@ from datetime import datetime
 from lib import Planet, Request
 import xmltodict
 import os
+import time
 
 def log(txt):
   print txt
@@ -29,47 +30,57 @@ class ClientBase(object):
   def __init__(self, host, port):
     self.host = host
     self.port = port
+    self.s = self.connect()
+    self.log = Logger()
+    self.step = 0
+
+  def connect(self):
     self.s = socket.socket(
       socket.AF_INET,
       socket.SOCK_STREAM
     )
     self.s.connect((self.host, self.port))
-    self.log = Logger()
-    self.step = 0
-
+    return self.s
 
   def close(self):
     self.s.close()
 
   def _send(self, data):
+    log("_send:data:%s" % data)
     sendData = 0
     while sendData < len(data):
       sendData += self.s.send(data)
     self.log.write(data, "send", self.step)
 
   def _recv(self):
+    log("_recv")
     data = ""
-    chunk = ""
-    while chunk=="":
+    while True:
       chunk = self.s.recv(self.BUFFER_SIZE)
       data += chunk
       if data == "":
-        continue
-      if len(chunk) < self.BUFFER_SIZE:
+        break
+      if len(chunk) < self.BUFFER_SIZE and chunk == "":
         break
     self.log.write(data, "recv", self.step)
+    log("_recv:data %s" % data)
     return data
 
   def recv(self):
     data = self._recv()
-    return xmltodict.parse(data)
+    if data != "":
+      self.close()
+      self.connect()
+      return xmltodict.parse(data)
+    else:
+      return None
 
   def send(self, obj):
     data = xmltodict.unparse(obj)
     return self._send(data)
 
   def handle(self, obj, request):
-    raise NotImplemented("Need to implement")
+    raise NotImplemented('Need to implement')
 
 
 class Client(ClientBase):
@@ -78,7 +89,7 @@ class Client(ClientBase):
     self.token = token
     self.user = user
 
-  def auth(self):
+  def sendAuth(self):
     auth = {
       "request": {
         "token": self.token,
@@ -86,20 +97,23 @@ class Client(ClientBase):
       }
     }
     self.send(auth)
-    return self.recv()
+
+
 
   def run(self):
-    log("Begin game")
     response = None
     while True:
-      response = self.auth()["response"]
-      if not response['errors']:
+      auth = self.sendAuth()
+      result = self.recv()
+      if result and result["response"] and not result["response"]["errors"]:
+        response = result["response"]
         break
-    log("Begin Gane")
+
+    log("Begin Game")
     while True:
       self.step += 1
-      planets = []
-      planets = map(lambda planet: Planet(planet, planets, self.user), response["planets"])
+      planets = {}
+      planets = map(lambda planet: Planet(planet, planets, self.user), response["planets"]["planet"])
       request = Request(self.token)
       self.handle(planets, request)
       self.send(request)
