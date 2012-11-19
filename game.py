@@ -16,14 +16,18 @@ class Game(Client):
           myPlanetNeighbours[n.id] = {
             "planets":[],
             "maxAttack":0,
+            "danger":0,
+            "rating":0
           }
         myPlanetNeighbours[n.id]["planets"].append(
           planets[p.id]
         )
     for id, info in myPlanetNeighbours:
+      info["danger"] = planets[id].danger
       for p in info["planets"]:
         info["maxAttack"] += p.droids
-
+      info["rating"] = info["maxAttack"] - info["danger"]
+     
 
 
 

@@ -91,8 +91,9 @@ class Planet(object):
       self.droids
     )
 
-  def nextTurnRating(self, x):
-    return ( self.danger - x) * self.percent
+  @property
+  def grow(self):
+    return self.droids * (1+self.percent)
 
   @property
   def percent(self):
