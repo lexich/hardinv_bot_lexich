@@ -51,7 +51,10 @@ class Game(Client):
         target.neighbours
       )
       for src in mySourcesPlanets:
-        if target.growRating(target.droids) < ratingFilter: continue
+        if src.growRating(src.droids) > ratingFilter:
+          continue
+        if src.growRating(src.droids) > target.growRating(target.droids):
+          continue
         self.trySendDroids(plan, src, target, "patient")
 
 
