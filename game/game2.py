@@ -22,7 +22,12 @@ class Game(Client):
       if not p.is_myself: continue
       myPlanets[id] = p
       if len(p.neighbours) == 1:
-        self.trySendDroids(plan, p, p.neighbours[0], "rush")
+        src = p
+        target = p.neighbours[0]
+        if target.is_enemy or (
+            target.is_myself
+            and src.growRating(src.droids) < target.growRating(target.droids)):
+          self.trySendDroids(plan, p, target , "rush")
       for n in p.neighbours:
         if n.is_myself:
           iterNeighbours = neighbours["my"]
@@ -51,7 +56,7 @@ class Game(Client):
         target.neighbours
       )
       for src in mySourcesPlanets:
-        if src.growRating(src.droids) > ratingFilter:
+        if src.droids/src.limit < 0.5:
           continue
         if src.growRating(src.droids) > target.growRating(target.droids):
           continue
@@ -124,6 +129,8 @@ class Game(Client):
         request.add(_from.id,_to.id, _from.sendDroids(_from.droids))
       elif _from.attack > explorerAttack and \
            _from.growRating(_from.droids) < explorerRating:
+        request.add(_from.id,_to.id, _from.sendDroids(explorerAttack))
+      elif len(_from.neighbours) == 1:
         request.add(_from.id,_to.id, _from.sendDroids(explorerAttack))
 
     patient = plan["strategy"].get("patient",[])
