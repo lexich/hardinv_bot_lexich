@@ -93,10 +93,10 @@ class ClientBase(object):
       return DomEl(parseString(""))
 
   def send(self, request):
-    log_error(unicode(request))
+    #log_error(unicode(request))
     return self._send(request.to_xml)
 
-  def handle(self, obj, request):
+  def handle(self, planets, request):
     raise NotImplemented('Need to implement')
 
 
@@ -149,15 +149,17 @@ class Client(ClientBase):
           for error in response.errors:
             log_error("ERROR: %s" % error)
         response = self._parceResponce(response)
+        log_error("step:%s" % self.step)
       except Win, e:
         log_error("You win")
         break
       except GameOver, e:
-        log_error("Game ovew")
+        log_error("Game over")
         break
       except Exception, e:
         log_error(e.message)
       if hasattr(self,"TEST"):
         log_error("End test")
         break
+    log_error("steps:%s" % self.step)
 

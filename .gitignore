@@ -3,3 +3,5 @@
 log
 *.pyc
 log
+debug.txt
+log.txt

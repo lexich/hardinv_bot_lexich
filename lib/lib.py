@@ -8,29 +8,44 @@ __author__ = 'lexich'
 class Win(Exception):
   pass
 
+
 class GameOver(Exception):
   pass
 
-class Planet(object):
 
+def cache(func):
+  key = func.func_name
+
+  def wrap(self, *args, **kwargs):
+    if not hasattr(self, "__cache_wrap"):
+      self.__cache_wrap = {}
+    if not self.__cache_wrap.has_key(key):
+      self.__cache_wrap[key] = func(self, *args, **kwargs)
+    return self.__cache_wrap[key]
+
+  return wrap
+
+
+class Planet(object):
   PROPERTY = {
-    "TYPE_A":{
-      "p":0.1,
-      "limit":100.0
+    "TYPE_A": {
+      "p": 0.1,
+      "limit": 100.0
     },
-    "TYPE_B":{
-      "p":0.15,
-      "limit":200.0
+    "TYPE_B": {
+      "p": 0.15,
+      "limit": 200.0
     },
-    "TYPE_C":{
-      "p":0.2,
-      "limit":500.0
+    "TYPE_C": {
+      "p": 0.2,
+      "limit": 500.0
     },
-    "TYPE_D":{
-      "p":0.3,
-      "limit":1000.0
+    "TYPE_D": {
+      "p": 0.3,
+      "limit": 1000.0
     }
   }
+
   def __init__(self, obj, planets, user):
     self.user = user
     self.id = obj.attr("id")
@@ -44,55 +59,62 @@ class Planet(object):
   def __unicode__(self):
     return "%s %s" % (self.user, self.id)
 
+  @cache
+  def get_neighbours(self):
+    return map(lambda id: self.planets[id], self._neighbours)
+
   @property
   def neighbours(self):
-    if not hasattr(self,"_neighbours_cache"):
-      self._neighbours_cache = map(lambda id:self.planets[id], self._neighbours )
-    return self._neighbours_cache
+    return self.get_neighbours()
+
+
+  @cache
+  def get_danger(self):
+    rating = {}
+    if self.is_enemy:
+      rating[self.owner] = self.grow
+
+    for n in self.neighbours:
+      if not n.is_enemy: continue
+      if not rating.has_key(n.owner):
+        rating[n.owner] = 0
+      rating[n.owner] += n.droids
+    return max(rating.values()) if len(rating.values()) > 0 else 0
 
   @property
   def danger(self):
-    def handle(n):
-      if n.owner == "" or n.owner == self.user:
-        return 0
-      else:
-        if n.owner == self.owner:
-          return self.droids + n.droids
-        else:
-          return self.droids
+    return self.get_danger()
 
-    return max(
-      max(map(handle, self.neighbours)),
-      self.droids
-    )
-
-  def sendDroids(self,n, limit=10):
+  def sendDroids(self, n, limit=10):
     """
     Отправить дройдов
     """
     if self.droids - limit > n:
       self.droids -= n
       return n
+    elif self.droids < limit:
+      return 0
     else:
       res = self.droids - limit
       self.droids = limit
       return res
 
-  def growRating(self,x=10):
+  def growRating(self, x=10):
     """
     За сколько шагов планета достигнет полной населенности
     с x дройдов
     """
-    base = self.limit/x if x>0 else self.limit
+    base = self.limit / x if x > 0 else self.limit
     if not base: raise Exception("Unknown planet")
-    return math.log(base,1+self.percent)
+    return math.log(base, 1 + self.percent)
 
   @property
   def grow(self):
-    return self.droids * (1+self.percent)
+    return self.droids * (1 + self.percent)
 
   #рейтинг для атаки
   RATING_ATTACK = 3
+
   @property
   def attack(self):
     """
@@ -100,8 +122,12 @@ class Planet(object):
     """
     rating = self.growRating(self.droids)
     if rating < self.RATING_ATTACK:
-      return int(self.droids*self.percent)
+      return int(self.droids * self.percent)
     return 0
+
+  @property
+  def is_myself(self):
+    return self.owner == self.user
 
   @property
   def is_free(self):
@@ -114,13 +140,13 @@ class Planet(object):
 
   @property
   def percent(self):
-    property = self.PROPERTY.get(self.type,{})
-    return property.get("p",0)
+    property = self.PROPERTY.get(self.type, {})
+    return property.get("p", 0)
 
   @property
   def limit(self):
-    property = self.PROPERTY.get(self.type,{})
-    return property.get("limit",0)
+    property = self.PROPERTY.get(self.type, {})
+    return property.get("limit", 0)
 
 
 class Request(object):
@@ -130,16 +156,16 @@ class Request(object):
 
   def add(self, _from, _to, unitscount):
     self.actions.append({
-      "from":int(_from),
-      "to":int(_to),
-      "unitscount":int(unitscount)
+      "from": int(_from),
+      "to": int(_to),
+      "unitscount": int(unitscount)
     })
 
   @property
   def _xmlActions(self):
     return u"".join(
       map(
-        lambda action:u"""
+        lambda action: u"""
         <action>
           <from>%(from)d</from>
           <to>%(to)d</to>
@@ -172,14 +198,14 @@ class DomEl(object):
   def to_int(self):
     try:
       return int(self.val)
-    except ValueError,e:
+    except ValueError, e:
       return 0
 
   @property
   def val(self):
     return self.el.firstChild.nodeValue if self.el.firstChild else None
 
-  def attr(self,name):
+  def attr(self, name):
     return self.el.attributes.get(name).value
 
   @property

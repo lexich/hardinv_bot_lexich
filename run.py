@@ -14,7 +14,7 @@ class TestGame(Game):
     pass
 
   def _recv(self):
-    with open("log/recv_attack.xml") as f:
+    with open("log/2012-11-20-22-19-46/25_recv.xml") as f:
       return f.read()
 
   def _send(self, data):
@@ -35,5 +35,3 @@ if __name__ == "__main__":
   else:
     g = Game(*params)
     g.run()
-
-
