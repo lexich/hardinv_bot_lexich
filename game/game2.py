@@ -24,14 +24,7 @@ class MixinStrategies(object):
     if droidsRedistribution < 0:
       print "executePlanRedistribution: Error droidsRedistribution %s" % droidsRedistribution
       return
-
-    if _to.growRating(_to.droids) > 1:
-      request.add(_from.id, _to.id, _from.sendDroids(droidsRedistribution))
-    elif _from.limit > _to.limit:
-      request.add(_from.id, _to.id, _from.sendDroids(droidsRedistribution))
-    elif _from.limit == _to.limit:
-      if len(_from.neighbours) < len(_to.neighbours):
-        request.add(_from.id, _to.id, _from.sendDroids(droidsRedistribution))
+    request.add(_from.id, _to.id, _from.sendDroids(droidsRedistribution))
 
 
   def strategy_aggressive(self, plan, request, _from, _to):
@@ -64,7 +57,7 @@ class MixinStrategies(object):
           request.add(friend.id, _from.id, friend.sendDroids(droids))
         return
         #Если агрессивное нападение не удалось пробрасваем его до умеренного
-    super(MixinStrategies,self).trySendDroids(plan, _from, _to, "patient")
+    super(MixinStrategies, self).trySendDroids(plan, _from, _to, "patient")
 
   def strategy_rush(self, plan, request, _from, _to):
     """
@@ -173,22 +166,44 @@ class GameConfig(Client):
         target.neighbours
       )
       for src in mySourcesPlanets:
+        #Если на планете источнике наблюдается переполнение
         if src.growRating(src.droids) <= 1:
-          self.trySendDroids(plan, src, target, "redistribution")
-          #если дройлов меньше {minDroids}
-        if target.droids < minDroids:
-          self.trySendDroids(plan, src, target, "support")
+          #Если планета приемник в безопасности
+          if not target.danger:
+            #Если планете источнику ничего не угражает
+            if not src.danger:
+              #Если опасность у соседей планеты приемника больше
+              if target.neighboursDanger() > src.neighboursDanger():
+                self.trySendDroids(plan, src, target, "redistribution")
+              else:
+              #Если у соседей планет тоже все в поряке применяем глубокий поиск
+                fullTarget = target.fullNeighboursDanger(0)
+                fullSrc = src.fullNeighboursDanger(fullTarget)
+                if fullTarget > fullSrc:
+                  self.trySendDroids(plan, src, target, "redistribution")
+
+                continue
+            else:
+              continue
+          #У планеты приемника есть опасность
+          else:
+            self.trySendDroids(plan, src, target, "redistribution")
         else:
-          if src.droids / src.limit < ratingFilter:
-            continue
-          if src.growRating(src.droids) > target.growRating(target.droids):
-            continue
-          if target.droids > target.danger:
-            continue
-            #Если планеты переполнены
-          if target.droids > target.limit and src.droids > src.limit and src.droids > target.droids:
-            continue
-          self.trySendDroids(plan, src, target, "patient")
+          #если дройлов меньше минимального колличества {minDroids}
+          if target.droids < minDroids:
+            self.trySendDroids(plan, src, target, "support")
+          #если дройдов больше минимума
+          else:
+            #Если колличество дройдов недостаточно для отправки пропускаем
+            if src.droids / src.limit < ratingFilter:
+              continue
+            #Если рейтинг у планеты приемника выше, то пропускаем
+            if src.growRating(src.droids) > target.growRating(target.droids):
+              continue
+            #Если планета приемник готова сопротивлятся агрессии, то пропускаем
+            if target.droids > target.danger:
+              continue
+            self.trySendDroids(plan, src, target, "patient")
 
 
   def actionSendExplorers(self, myPlanets, neighbours, planets, request, plan):
@@ -207,6 +222,7 @@ class GameConfig(Client):
         target.neighbours
       )
       for src in mySourcesPlanets:
+        #Если планета источник наедине с врагом, агрессивное нападение
         if len(target.neighbours) == 1 or len(filter(
           lambda x: x.is_enemy,
           target.neighbours
@@ -215,21 +231,16 @@ class GameConfig(Client):
         else:
           self.trySendDroids(plan, src, target, "patient")
 
+
 class Game(MixinStrategies, GameConfig):
   def handle(self, planets, request):
     myPlanets = {}
-    plan = {
-      "from": {},
-      "to": {},
-      "strategy": {}
-    }
-    neighbours = {
-      "my": {},
-      "free": {},
-      "enemy": {}
-    }
+    plan = {"from": {}, "to": {}, "strategy": {}}
+    neighbours = {"my": {}, "free": {}, "enemy": {}}
+
     for id, p in planets.iteritems():
-      if not p.is_myself: continue
+      if not p.is_myself:
+        continue
       myPlanets[id] = p
       if len(p.neighbours) == 1:
         self.oneNeighbours(plan, p, p.neighbours[0])
@@ -254,12 +265,3 @@ class Game(MixinStrategies, GameConfig):
 
     for strategy in self.STRATEGIES:
       self.execute(plan, request, strategy)
-
-
-
-
-
-
-
-
-

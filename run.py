@@ -9,7 +9,7 @@ __author__ = 'lexich'
 
 
 class TestGame(Game):
-  PATTERN = "2012-11-21-15-33-26"
+  PATTERN = "2012-11-21-02-03-13"
   def __init__(self,*args,**kwargs):
     self.testStep = 0
     super(TestGame,self).__init__(*args,**kwargs)

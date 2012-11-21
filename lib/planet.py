@@ -59,12 +59,36 @@ class Planet(object):
   def neighbours(self):
     return self.get_neighbours()
 
+  def fullNeighboursDanger(self, equalValue, level=0):
+    """
+    Ближайший уровень опасности
+    """
+    danger = self.neighboursDanger()
+    if not danger and not equalValue and level < 3:
+      for n in self.get_neighbours():
+        danger = max(danger, n.neighboursDanger())
+      level +=1
+      if danger <= 0:
+        for n in self.get_neighbours():
+          danger = max(danger, n.fullNeighboursDanger(danger,level))
+    return danger / 10.0 ** level
+
+  @cache
+  def neighboursDanger(self):
+    """
+    Уровень опасности у окружающих соседей
+    """
+    return max(
+      map(
+        lambda x: x.get_danger(),
+        self.get_neighbours()
+      ))
 
   @cache
   def get_danger(self):
     rating = {}
     if self.is_enemy:
-      rating[self.owner] = self.grow
+      rating[self.owner] = self.droids
 
     for n in self.neighbours:
       if not n.is_enemy: continue
