@@ -86,6 +86,9 @@ class Game(Client):
             continue
           if target.droids > target.danger:
             continue
+          #Если планеты переполнены
+          if target.droids > target.limit and src.droids > src.limit and src.droids > target.droids:
+            continue
           self.trySendDroids(plan, src, target, "patient")
 
 

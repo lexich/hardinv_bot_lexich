@@ -145,6 +145,7 @@ class Client(ClientBase):
 
 
   def run(self):
+    safeEndGame = False
     response = None
     testMode = False
 
@@ -167,11 +168,17 @@ class Client(ClientBase):
         response = self._parceResponce(response)
         log_error("step:%s" % self.step)
       except Win, e:
-        log_error("You win")
-        break
+        if not safeEndGame:
+          log_error("You win")
+          safeEndGame = True
+        else:
+          break
       except GameOver, e:
-        log_error("Game over")
-        break
+        if not safeEndGame:
+          log_error("Game over")
+          safeEndGame = True
+        else:
+          break
       except InterruptGame,e:
         log_error("Interrupt game")
         testMode = True
