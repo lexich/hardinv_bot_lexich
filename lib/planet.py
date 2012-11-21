@@ -80,6 +80,20 @@ class Planet(object):
     return danger / 10.0 ** level
 
   @cache
+  def neighboursMyself(self):
+    return filter(
+      lambda x:x.is_myself,
+      self.neighbours
+    )
+
+  @cache
+  def maxMyselfNeighboursAttack(self):
+    return max(map(
+        lambda n:n.attack,
+        self.neighboursMyself()
+      ))
+
+  @cache
   def neighboursDanger(self):
     """
     Уровень опасности у окружающих соседей
