@@ -143,12 +143,11 @@ class Client(ClientBase):
     self.handle(planets, request)
     return  self.action(request)
 
-
+  testMode = False
   def run(self):
-    safeEndGame = False
+    safeEndGame = 0
+    safeEndGameMax = 3
     response = None
-    testMode = False
-
     while True:
       response = self.auth()
       errors = response.errors
@@ -159,7 +158,8 @@ class Client(ClientBase):
         break
 
     log("Begin Game")
-    self.log.start()
+    if not self.testMode:
+      self.log.start()
     while True:
       try:
         if len(response.errors) > 0:
@@ -168,25 +168,20 @@ class Client(ClientBase):
         response = self._parceResponce(response)
         log_error("step:%s" % self.step)
       except Win, e:
-        if not safeEndGame:
-          log_error("You win")
-          safeEndGame = True
-        else:
-          break
+        log_error("You win")
+        break
       except GameOver, e:
-        if not safeEndGame:
+        if safeEndGame > safeEndGameMax:
           log_error("Game over")
-          safeEndGame = True
-        else:
           break
+        safeEndGame += 1
       except InterruptGame,e:
         log_error("Interrupt game")
-        testMode = True
         break
       except socket.error, e:
         log_error(e.message)
       except Exception, e:
         log_error(e.message)
-    if not testMode:
+    if not self.testMode:
       self.log.flush()
 

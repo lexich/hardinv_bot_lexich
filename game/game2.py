@@ -1,9 +1,12 @@
 # -*- coding: utf-8 -*-
 from lib.client import Client
+from lib.planet import Planet
 from lib.signals import GameOver, Win
 import math
 
 __author__ = 'lexich'
+
+
 
 
 class MixinStrategies(object):
@@ -46,7 +49,7 @@ class MixinStrategies(object):
       #Если помощь подмоги достаточна
       if _from.danger < (_from.droids - needToAttack) + maxHelp:
         #Определяем коэффициент равномерности поддержки
-        kSupport = (_from.droids - needToAttack - _from.danger + 1.0) / maxHelp
+        kSupport = (_from.droids - needToAttack) / maxHelp
         if kSupport < 0:
           return
           #Отправляем на атаку
@@ -74,7 +77,7 @@ class MixinStrategies(object):
       #Проверяем окружение планеты приемника на злобность
       if attackDroids > _to.neighboursDanger() * kResist:
         request.add(_from.id, _to.id, _from.sendDroids(attackDroids))
-    #Если сосед враг
+    #Если сосед - враг
     else:
       #Заполненность планеты
       k = _from.growRating(_from.droids) / _from.growRating(10)
@@ -117,10 +120,18 @@ class MixinStrategies(object):
         request.add(src.id, _to.id, src.sendDroids(src.attack))
 
   def strategy_support(self, plan, request, _from, _to):
-    if _to.danger == 0 and _to.droids <= 10:
-      request.add(_from.id, _to.id, _from.sendDroids(15))
-    elif _to.danger > _to.droids:
-      request.add(_from.id, _to.id, _from.sendDroids(_from.attack))
+    """
+    Стратегия помощи планетам ускорить рост популяции,
+    целесообразно для планет доноров
+    """
+    #Если планета в безопасности
+    if not _to.danger:
+      maxSendDroids = _from.attack
+      needToSend = Planet.SPEED_GROW_RATING*_to.limit - _to.droids
+      sendToDroids = maxSendDroids if needToSend > maxSendDroids else needToSend
+      request.add(_from.id, _to.id, _from.sendDroids(sendToDroids))
+    elif _to.danger and _to.droids < 10:
+      request.add(_from.id, _to.id, _from.sendDroids(10))
 
 
 class GameConfig(Client):
@@ -161,7 +172,7 @@ class GameConfig(Client):
 
   def actionFixPosition(self, myPlanets, neighbours, planets, request, plan):
     ratingFilter = 0.5
-    minDroids = 10
+
     for id, target in neighbours["my"].iteritems():
       mySourcesPlanets = filter(
         lambda p: p.is_myself,
@@ -191,8 +202,8 @@ class GameConfig(Client):
           else:
             self.trySendDroids(plan, src, target, "redistribution")
         else:
-          #если дройлов меньше минимального колличества {minDroids}
-          if target.droids < minDroids:
+          #Если скорость прироста дройдом меньше границы {growSpeedRating}
+          if target.speedGrowRating() < Planet.SPEED_GROW_RATING:
             self.trySendDroids(plan, src, target, "support")
           #если дройдов больше минимума
           else:
@@ -267,3 +278,4 @@ class Game(MixinStrategies, GameConfig):
 
     for strategy in self.STRATEGIES:
       self.execute(plan, request, strategy)
+    print [ (id, len(arr)) for id, arr in plan["strategy"].iteritems() ]

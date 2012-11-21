@@ -19,6 +19,9 @@ def cache(func):
 
 
 class Planet(object):
+  #Рейтинг показывает удовлетворительную
+  #скорость прироста дройдов, которая вычисляется speedGrowRating
+  SPEED_GROW_RATING = 0.3
   PROPERTY = {
     "TYPE_A": {
       "p": 0.1,
@@ -58,6 +61,9 @@ class Planet(object):
   @property
   def neighbours(self):
     return self.get_neighbours()
+
+  def speedGrowRating(self):
+    return self.droids/self.limit
 
   def fullNeighboursDanger(self, equalValue, level=0):
     """

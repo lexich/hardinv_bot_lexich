@@ -9,10 +9,17 @@ __author__ = 'lexich'
 
 
 class TestGame(Game):
-  PATTERN = "2012-11-21-02-03-13"
+  testMode = True
   def __init__(self,*args,**kwargs):
     self.testStep = 0
+    import os
+    import random
+
+    root, folders, files = os.walk("log").next()
+    self.findFolder = folders[random.randint(0,len(folders)-1)]
     super(TestGame,self).__init__(*args,**kwargs)
+    print "FOLDER:%s" % self.findFolder
+
   def connect(self):
     pass
 
@@ -21,7 +28,7 @@ class TestGame(Game):
 
   def _recv(self):
     try:
-      filepath = "log/%s/%s_recv.xml" %(self.PATTERN, self.testStep)
+      filepath = "log/%s/%s_recv.xml" %(self.findFolder, self.testStep)
       self.testStep += 1
       with open(filepath,"r") as f:
         return f.read()
