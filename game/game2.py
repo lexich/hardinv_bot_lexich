@@ -71,7 +71,9 @@ class MixinStrategies(object):
     attackDroids = _from.droids * kDroidsAttack
     #Если сосед не враг
     if not _to.is_enemy:
-      request.add(_from.id, _to.id, _from.sendDroids(attackDroids))
+      #Проверяем окружение планеты приемника на злобность
+      if attackDroids > _to.neighboursDanger() * kResist:
+        request.add(_from.id, _to.id, _from.sendDroids(attackDroids))
     #Если сосед враг
     else:
       #Заполненность планеты
