@@ -2,11 +2,17 @@
 # -*- coding: utf-8 -*-
 from game import Game
 import sys
+from lib.signals import InterruptGame
+
+
 __author__ = 'lexich'
 
 
 class TestGame(Game):
-  TEST = True
+  PATTERN = "2012-11-21-11-37-14"
+  def __init__(self,*args,**kwargs):
+    self.testStep = 0
+    super(TestGame,self).__init__(*args,**kwargs)
   def connect(self):
     pass
 
@@ -14,8 +20,14 @@ class TestGame(Game):
     pass
 
   def _recv(self):
-    with open("log/2012-11-20-22-19-46/25_recv.xml") as f:
-      return f.read()
+    try:
+      filepath = "log/%s/%s_recv.xml" %(self.PATTERN, self.testStep)
+      self.testStep += 1
+      with open(filepath,"r") as f:
+        return f.read()
+    except IOError,e:
+      raise InterruptGame
+
 
   def _send(self, data):
     pass
@@ -35,3 +47,5 @@ if __name__ == "__main__":
   else:
     g = Game(*params)
     g.run()
+
+

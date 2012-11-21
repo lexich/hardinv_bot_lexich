@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from lib.client import Client
-from lib.lib import GameOver, Win
-import math
+
 
 __author__ = 'lexich'
 

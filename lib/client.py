@@ -2,8 +2,10 @@
 # -*- coding: utf-8 -*-
 import socket
 from datetime import datetime
+from dom import DomEl
+from signals import GameOver, Win, InterruptGame
 
-from lib import Planet, Request, Win, GameOver,DomEl
+from planet import Planet, Request
 from xml.dom.minidom import parseString
 import os
 
@@ -26,21 +28,35 @@ def log(txt):
     print("Logger error:%s" % e)
 
 
+
 class Logger(object):
   def __init__(self):
-    self.start = False
+    self._start = False
     self.lof_dir = "log"
     self.log_file_dir = os.path.join(self.lof_dir, datetime.now().strftime("%Y-%m-%d-%H-%M-%S"))
+    self.history = {}
 
-  def write(self, data, type, count):
-    if not self.start:
-      if not os.path.exists(self.lof_dir):
-        os.mkdir(self.lof_dir)
-      os.mkdir(self.log_file_dir)
-      self.start = True
-    filename = os.path.join(self.log_file_dir, "{1}_{0}.xml".format(type, count))
-    with open(filename, "w") as f:
-      f.write(u"%s" % data)
+  def start(self):
+    self._start = True
+
+  def write(self, data, type, count=0):
+    if not self._start: return
+    if not self.history.has_key(type):
+      self.history[type] = []
+    self.history[type].append(data)
+
+  def flush(self):
+    if not os.path.exists(self.lof_dir):
+      os.mkdir(self.lof_dir)
+    os.mkdir(self.log_file_dir)
+
+    for type, type_history in self.history.iteritems():
+      count = 0
+      for data in type_history:
+        filename = os.path.join(self.log_file_dir, "{1}_{0}.xml".format(type, count))
+        with open(filename, "w") as f:
+          f.write(u"%s" % data)
+        count+=1
 
 
 class ClientBase(object):
@@ -65,14 +81,12 @@ class ClientBase(object):
     self.s.close()
 
   def _send(self, data):
-    log("_send:data:%s" % data)
     sendData = 0
     while sendData < len(data):
       sendData += self.s.send(data)
     self.log.write(data, "send", self.step)
 
   def _recv(self):
-    log("_recv")
     data = ""
     while True:
       chunk = self.s.recv(self.BUFFER_SIZE)
@@ -82,7 +96,6 @@ class ClientBase(object):
       if len(chunk) < self.BUFFER_SIZE and chunk == "":
         break
     self.log.write(data, "recv", self.step)
-    log("_recv:data %s" % data)
     return data
 
   def recv(self):
@@ -133,6 +146,8 @@ class Client(ClientBase):
 
   def run(self):
     response = None
+    testMode = False
+
     while True:
       response = self.auth()
       errors = response.errors
@@ -143,6 +158,7 @@ class Client(ClientBase):
         break
 
     log("Begin Game")
+    self.log.start()
     while True:
       try:
         if len(response.errors) > 0:
@@ -156,10 +172,15 @@ class Client(ClientBase):
       except GameOver, e:
         log_error("Game over")
         break
+      except InterruptGame,e:
+        log_error("Interrupt game")
+        testMode = True
+        break
+      except socket.error, e:
+        log_error(e.message)
       except Exception, e:
         log_error(e.message)
-      if hasattr(self,"TEST"):
-        log_error("End test")
-        break
+    if not testMode:
+      self.log.flush()
     log_error("steps:%s" % self.step)
 

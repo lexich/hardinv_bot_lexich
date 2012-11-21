@@ -1,16 +1,8 @@
 # -*- coding: utf-8 -*-
-from exceptions import ValueError
 import math
 import simplejson as json
 
 __author__ = 'lexich'
-
-class Win(Exception):
-  pass
-
-
-class GameOver(Exception):
-  pass
 
 
 def cache(func):
@@ -120,10 +112,15 @@ class Planet(object):
     """
     Дройды используемые для атаки
     """
+    attack = 0
     rating = self.growRating(self.droids)
     if rating < self.RATING_ATTACK:
-      return int(self.droids * self.percent)
-    return 0
+      attack = int(self.droids * self.percent)
+      if self.danger > self.droids - attack:
+        attack = self.droids - self.danger
+    if attack < 0:
+      attack = 0
+    return attack
 
   @property
   def is_myself(self):
@@ -155,6 +152,10 @@ class Request(object):
     self.actions = []
 
   def add(self, _from, _to, unitscount):
+    if unitscount == 0:
+      return
+    elif unitscount < 0:
+      return
     self.actions.append({
       "from": int(_from),
       "to": int(_to),
@@ -186,43 +187,3 @@ class Request(object):
     return json.dumps(self.actions)
 
 
-class DomEl(object):
-  def __init__(self, el):
-    self._el = el
-
-  @property
-  def el(self):
-    return super(DomEl, self).__getattribute__("_el")
-
-  @property
-  def to_int(self):
-    try:
-      return int(self.val)
-    except ValueError, e:
-      return 0
-
-  @property
-  def val(self):
-    return self.el.firstChild.nodeValue if self.el.firstChild else None
-
-  def attr(self, name):
-    return self.el.attributes.get(name).value
-
-  @property
-  def planets(self):
-    return [DomEl(x) for x in self.el.getElementsByTagName("planet")]
-
-  @property
-  def neighbours(self):
-    return [DomEl(x).val for x in self.el.getElementsByTagName("neighbour")]
-
-  @property
-  def errors(self):
-    return [DomEl(x).val for x in self.el.getElementsByTagName("error")]
-
-  def __getattribute__(self, name):
-    if type(self).__dict__.has_key(name):
-      return super(DomEl, self).__getattribute__(name)
-    else:
-      resp = self.el.getElementsByTagName(name)
-      return DomEl(resp[0]) if len(resp) == 1 else self
