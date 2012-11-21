@@ -9,7 +9,7 @@ __author__ = 'lexich'
 
 
 class TestGame(Game):
-  PATTERN = "2012-11-21-11-37-14"
+  PATTERN = "2012-11-21-15-33-26"
   def __init__(self,*args,**kwargs):
     self.testStep = 0
     super(TestGame,self).__init__(*args,**kwargs)
@@ -28,9 +28,14 @@ class TestGame(Game):
     except IOError,e:
       raise InterruptGame
 
-
   def _send(self, data):
     pass
+
+  def handle(self, planets, request):
+    result = super(TestGame,self).handle(planets,request)
+    return result
+
+
 
 
 params = (

@@ -189,5 +189,4 @@ class Client(ClientBase):
         log_error(e.message)
     if not testMode:
       self.log.flush()
-    log_error("steps:%s" % self.step)
 
