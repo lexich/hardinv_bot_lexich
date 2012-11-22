@@ -70,7 +70,7 @@ class Planet(object):
     Ближайший уровень опасности
     """
     danger = self.neighboursDanger()
-    if not danger and not equalValue and level < 3:
+    if not danger and not equalValue and level < 20:
       for n in self.get_neighbours():
         danger = max(danger, n.neighboursDanger())
       level +=1

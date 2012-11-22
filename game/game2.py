@@ -25,6 +25,23 @@ class MixinStrategies(object):
     if droidsRedistribution < 0:
       print "executePlanRedistribution: Error droidsRedistribution %s" % droidsRedistribution
       return
+
+    if not( _from.is_myself and _to.is_myself):
+      return
+    #Если у планеты приемника 1 сосед(источник) и заполнена, то пропускаем
+    if _to.neighbours == 1 and _to.growRating(_to.droids) < 1:
+      return
+
+    if _to.growRating(_to.droids) < 1 and _from.growRating(_from.droids) < 1:
+      if _to.droids > _from.droids:
+        return
+      if _from.danger > _to.danger:
+        return
+      fromDanger = _from.fullNeighboursDanger(0)
+      toDanger = _to.fullNeighboursDanger(fromDanger)
+      if fromDanger > toDanger:
+        return
+
     request.add(_from.id, _to.id, _from.sendDroids(droidsRedistribution))
 
 
@@ -154,6 +171,12 @@ class MixinStrategies(object):
         request.add(_from.id, _to.id, _from.sendDroids(sendDroids))
 
 
+def _cmp_default(_x, _y):
+  x,y = _x[1],_y[1]
+  result = cmp(x.danger, y.danger)
+  return result if result != 0 else cmp(x.limit, y.limit)
+
+
 class GameConfig(Client):
   def trySendDroids(self, plan, _from, _to, _strategy="patient"):
     """
@@ -178,11 +201,7 @@ class GameConfig(Client):
         key=lambda x: x[1].growRating()
       )
     else:
-      items = sorted(
-        items,
-        key=lambda x:x[1].limit,
-        reverse=True
-      )
+      items = sorted(items, cmp=_cmp_default, reverse=True)
     func = getattr(self, "strategy_%s" % strategy, None)
     if not func:
       return

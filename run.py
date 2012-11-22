@@ -10,14 +10,15 @@ __author__ = 'lexich'
 
 class TestGame(Game):
   testMode = True
-  def __init__(self,*args,**kwargs):
+
+  def __init__(self, *args, **kwargs):
     self.testStep = 0
     import os
     import random
 
     root, folders, files = os.walk("log").next()
-    self.findFolder = folders[random.randint(0,len(folders)-1)]
-    super(TestGame,self).__init__(*args,**kwargs)
+    self.findFolder = folders[random.randint(0, len(folders) - 1)]
+    super(TestGame, self).__init__(*args, **kwargs)
     print "FOLDER:%s" % self.findFolder
 
   def connect(self):
@@ -28,21 +29,19 @@ class TestGame(Game):
 
   def _recv(self):
     try:
-      filepath = "log/%s/%s_recv.xml" %(self.findFolder, self.testStep)
+      filepath = "log/%s/%s_recv.xml" % (self.findFolder, self.testStep)
       self.testStep += 1
-      with open(filepath,"r") as f:
+      with open(filepath, "r") as f:
         return f.read()
-    except IOError,e:
+    except IOError, e:
       raise InterruptGame
 
   def _send(self, data):
     pass
 
   def handle(self, planets, request):
-    result = super(TestGame,self).handle(planets,request)
+    result = super(TestGame, self).handle(planets, request)
     return result
-
-
 
 
 params = (
@@ -50,7 +49,7 @@ params = (
   10040,
   "h2oz5rnaepbcvn1uuq2elkvaw63nhpv1",
   "lexich"
-)
+  )
 
 if __name__ == "__main__":
   if len(sys.argv) > 1 and sys.argv[1] == "--test":
@@ -59,5 +58,3 @@ if __name__ == "__main__":
   else:
     g = Game(*params)
     g.run()
-
-
