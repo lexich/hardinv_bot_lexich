@@ -44,7 +44,6 @@ class TestGame(Game):
     return result
 
 
-
 params = (
   "hardinv.ru",
   10040,
@@ -87,36 +86,63 @@ if __name__ == "__main__":
         g = vtk.vtkMutableDirectedGraph()
         planets = self.g.planets
         request = self.g.request
-        G = {}
+        G, E = {}, {}
         G_labels = vtk.vtkStringArray()
-        G_labels.SetName("Labels")
+        G_labels.SetName("VLabels")
+        E_labels = vtk.vtkStringArray()
+        E_labels.SetName("ELabels")
 
-        E = {}
-        for id,planet in planets.iteritems():
-          G[id] = {
-            "vert":g.addVertex(),
-          }
-          G_labels.InsertNextValue("owner:{0}\ndroids:{1}, type:{2}"%[
-            planet.owner, planet.droids, planet.type
-          ])
-
-        for id,planet in planets.iteritems():
-          for n in planet.get_neighbours():
-            pair = [id,n.id].sort()
-            _hash = "%s%s" % pair
-            E[_hash] = {
-              "edge":g.AddGraphEdge(
-                G[pair[0]]["vert"],
-                G[pair[1]]["vert"]
-              ),
-              "pair":pair
-            }
+        self.algoritm(planets.values(), g, G_labels, E_labels, G, E)
         g.GetVertexData().AddArray(G_labels)
+        g.GetEdgeData().AddArray(E_labels)
         return g
+
+      def algoritm(self, planets,request, g, G_labels, E_labels, G, E):
+        """
+
+        """
+        minCount = min(
+          map(lambda x: len(x.neighbours), planets)
+        ) if len(planets) > 0 else 0
+        if not minCount: return
+        minPlanets, otherPlanets = [], []
+        for planet in planets:
+          iter = minPlanets if len(planet.neighbours) == minCount else otherPlanets
+          iter.append(planet)
+        self.createVertex(minPlanets, g, G, E, G_labels)
+        self.createEdges(minPlanets,request, g, G, E, E_labels)
+        self.algoritm(otherPlanets,request, g, G_labels, E_labels, G, E)
+
+      def createVertex(self, planets, g, G, E, G_labels):
+        for planet in planets:
+          if G.has_key(planet.id): continue
+          G[planet.id] = g.AddVertex()
+          params = {
+            "attack":planet.attack,
+            "danger":planet.danger,
+            "growRating":planet.growRating(planet.droids),
+            "neighboursDanger":planet.neighboursDanger(),
+            "is_dead":planet.is_dead(),
+          }
+          label = "\n".join(["%s - %s" % tuple(x) for x in params.iteritems()])
+          label = "{0}({1}) - {3}\n{2}".format(planet.type,planet.owner,label,planet.droids)
+          G_labels.InsertNextValue(label)
+          E[planet.id] = set()
+
+
+      def createEdges(self, planets,request, g, G, E, E_labels):
+        for planet in planets:
+          for neig in planet.neighbours:
+            if not G.has_key(neig.id): continue
+            if planet.id in E[neig.id]: continue
+            g.AddGraphEdge(G[planet.id], G[neig.id])
+            E_labels.InsertNextValue("edge")
+            E[neig.id].add(planet.id)
+            E[planet.id].add(neig.id)
+
+
     vis = Visualize(CustomBaseInteractorStyle)
     vis.start()
-
-
 
   if len(sys.argv) > 1 and sys.argv[1] == "--test":
     g = TestGame(*params)
