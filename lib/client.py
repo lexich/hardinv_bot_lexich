@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 import socket
 from datetime import datetime
+import traceback
+import sys
 from dom import DomEl
 from signals import GameOver, Win, InterruptGame
 
@@ -181,6 +183,7 @@ class Client(ClientBase):
       except socket.error, e:
         log_error(e.message)
       except Exception, e:
+        traceback.print_exc(file=sys.stderr)
         log_error(e.message)
     if not self.testMode:
       self.log.flush()

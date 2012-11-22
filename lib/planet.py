@@ -88,21 +88,26 @@ class Planet(object):
 
   @cache
   def maxMyselfNeighboursAttack(self):
-    return max(map(
-        lambda n:n.attack,
-        self.neighboursMyself()
-      ))
+    search = map(
+      lambda n:n.attack,
+      self.neighboursMyself()
+    )
+    return max(search) if len(search) > 0 else 0
 
   @cache
   def neighboursDanger(self):
     """
     Уровень опасности у окружающих соседей
     """
-    return max(
-      map(
-        lambda x: x.get_danger(),
-        self.get_neighbours()
-      ))
+    search = map(
+      lambda x: x.get_danger(),
+      self.get_neighbours()
+    )
+    return max(search) if len(search) > 0 else 0
+
+  @cache
+  def is_dead(self):
+    return self.danger * 0.7 > self.droids + self.maxMyselfNeighboursAttack()
 
   @cache
   def get_danger(self):

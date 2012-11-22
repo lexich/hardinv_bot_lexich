@@ -14,8 +14,31 @@ class MixinStrategies(object):
     "support",
     "explorer",
     "patient",
-    "redistribution"
+    "redistribution",
+    "runaway"
     )
+  def is_strategy_check(self,plan, request, _from, _to, _strategy):
+    if _strategy == "runaway":
+      return True
+
+    if _from.is_dead():
+      arr = filter(lambda n:not n.is_dead(), _from.neighbours)
+      for target in arr:
+        super(MixinStrategies,self).trySendDroids(plan, _from, target, "runaway")
+    if _to.is_dead():
+      arr = filter(lambda n:not n.is_dead(), _to.neighbours)
+      for target in arr:
+        super(MixinStrategies,self).trySendDroids(plan, _to, target, "runaway")
+    if _from.is_dead() or _to.is_dead():
+      return False
+    return True
+
+  def strategy_runaway(self, plan, request, _from, _to):
+    if _to.is_enemy:
+      return
+    if _to.danger > _from.droids:
+      return
+    request.add(_from.id, _to.id, _from.sendDroids(_from.droids,limit=0))
 
   def strategy_redistribution(self, plan, request, _from, _to):
     if _from.growRating(_from.droids) > 1:
@@ -207,7 +230,8 @@ class GameConfig(Client):
       return
     for item in items:
       _from, _to, _strategy = item
-      func(plan, request, _from, _to)
+      if self.is_strategy_check(plan, request, _from, _to, _strategy):
+        func(plan, request, _from, _to)
 
   def oneNeighbours(self, plan, src, target):
     if target.is_enemy or (
