@@ -63,33 +63,40 @@ class Planet(object):
     return self.get_neighbours()
 
   def speedGrowRating(self):
-    return self.droids/self.limit
+    return self.droids / self.limit
 
-  def fullNeighboursDanger(self, equalValue, level=0):
+  def fullNeighboursDanger(self, equalValue=0, level=0, exclude=set()):
     """
     Ближайший уровень опасности
     """
+    #если элемент уже исследовался, пропускаем
+    if self.id in exclude:
+      return 0
+    exclude.add(self.id)
     danger = self.neighboursDanger()
-    if not danger and not equalValue and level < 20:
+    #Если у соседей нулевой уровень опасности
+    #И параметр сравнения нулевой, то ищем на следующием уровне
+    #(иначе можно дальше не искать)
+    if danger <= 0 and equalValue <= 0:
       for n in self.get_neighbours():
         danger = max(danger, n.neighboursDanger())
-      level +=1
+        #Если у соседей опасность не найдена ищем дальше рекурсивно
       if danger <= 0:
         for n in self.get_neighbours():
-          danger = max(danger, n.fullNeighboursDanger(danger,level))
+          danger = max(danger, n.fullNeighboursDanger(danger, level + 1, exclude))
     return danger / 10.0 ** level
 
   @cache
   def neighboursMyself(self):
     return filter(
-      lambda x:x.is_myself,
+      lambda x: x.is_myself,
       self.neighbours
     )
 
   @cache
   def maxMyselfNeighboursAttack(self):
     search = map(
-      lambda n:n.attack,
+      lambda n: n.attack,
       self.neighboursMyself()
     )
     return max(search) if len(search) > 0 else 0
@@ -183,6 +190,34 @@ class Planet(object):
   def is_enemy(self):
     return not self.is_free and self.owner != self.user
 
+  @cache
+  def powerfullOtherNeighboursPlanets(self):
+    result = filter(lambda x: not x.is_myself and x.limit > self.limit, self.neighbours)
+    return sorted( result, key=lambda x:x.limit, reverse=True)
+
+  def searchPathToTarget(self,targetPlanet,roadLong=0,exclude=set()):
+    """
+    Найти соседнюю планету с коротой лучше начать путь до цели
+    """
+    if self in exclude: return None
+    neigPlanet = None
+    exclude.add(self)
+    for p in self.neighbours:
+      exclude.add(p)
+      if p == targetPlanet:
+        neigPlanet = targetPlanet
+        break
+    if not neigPlanet:
+      accumulator = []
+      for p in self.neighbours:
+        result = p.searchPathToTarget(targetPlanet,roadLong+1,exclude)
+        if result:
+          accumulator.append(result)
+      accumulator.sort(key=lambda r,ptr: r, reverse=True)
+      if len(accumulator) > 0:
+        return accumulator[0]
+
+    return {roadLong:neigPlanet} if neigPlanet else None
 
   @property
   def percent(self):
@@ -196,20 +231,40 @@ class Planet(object):
 
 
 class Request(object):
-  def __init__(self, token):
+  def __init__(self, token, planets={}):
     self.token = token
     self.actions = []
+    self.planets = planets
+    self.debug = {}
 
-  def add(self, _from, _to, unitscount):
+  def add(self, _from, _to, unitscount, strategy=""):
+    if not self.planets[_from].is_myself:
+      return
     if unitscount == 0:
       return
     elif unitscount < 0:
       return
+    self.addDebug(_from, _to, unitscount, strategy)
     self.actions.append({
       "from": int(_from),
       "to": int(_to),
       "unitscount": int(unitscount)
     })
+
+  def addDebug(self, _from, _to, unitscount, strategy):
+    val = {
+      "from": _from,
+      "to": _to,
+      "unitscount": int(unitscount),
+      "strategy": strategy
+    }
+    if not self.debug.has_key(_from):
+      self.debug[_from] = {}
+    if not self.debug.has_key(_to):
+      self.debug[_to] = {}
+    self.debug[_from][_to] = val
+    self.debug[_to][_from] = val
+
 
   @property
   def _xmlActions(self):

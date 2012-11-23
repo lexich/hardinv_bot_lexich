@@ -17,7 +17,9 @@ class TestGame(Game):
     import random
 
     root, folders, files = os.walk("log").next()
+    folders.sort()
     self.findFolder = folders[random.randint(0, len(folders) - 1)]
+    #self.findFolder = "2012-11-23-14-56-46"
     super(TestGame, self).__init__(*args, **kwargs)
     print "FOLDER:%s" % self.findFolder
 
@@ -32,6 +34,7 @@ class TestGame(Game):
       filepath = "log/%s/%s_recv.xml" % (self.findFolder, self.testStep)
       self.testStep += 1
       with open(filepath, "r") as f:
+        print "read: %s" % filepath
         return f.read()
     except IOError, e:
       raise InterruptGame
@@ -61,8 +64,10 @@ if __name__ == "__main__":
         super(VisualizeGame, self).__init__(*args, **kwargs)
 
       def handle(self, planets, request):
+        super(VisualizeGame,self).handle(planets,request)
         self.planets = planets
         self.request = request
+
 
       def run(self):
         if not self.response:
@@ -76,7 +81,11 @@ if __name__ == "__main__":
 
 
       def leftButtonPressEvent(self, obj, event):
-        pass
+        self.g.testStep -=2
+        if self.g.testStep < 0:
+          self.g.testStep = 0
+
+        self.rightButtonPressEvent(obj,event)
 
       def rightButtonPressEvent(self, obj, event):
         self.g.run()
@@ -92,7 +101,7 @@ if __name__ == "__main__":
         E_labels = vtk.vtkStringArray()
         E_labels.SetName("ELabels")
 
-        self.algoritm(planets.values(), g, G_labels, E_labels, G, E)
+        self.algoritm(planets.values(), request, g, G_labels, E_labels, G, E)
         g.GetVertexData().AddArray(G_labels)
         g.GetEdgeData().AddArray(E_labels)
         return g
@@ -125,7 +134,7 @@ if __name__ == "__main__":
             "is_dead":planet.is_dead(),
           }
           label = "\n".join(["%s - %s" % tuple(x) for x in params.iteritems()])
-          label = "{0}({1}) - {3}\n{2}".format(planet.type,planet.owner,label,planet.droids)
+          label = "{0}({1}:{4}) - {2}d.\n{3}".format(planet.type,planet.owner,planet.droids,label,planet.id)
           G_labels.InsertNextValue(label)
           E[planet.id] = set()
 
@@ -136,7 +145,9 @@ if __name__ == "__main__":
             if not G.has_key(neig.id): continue
             if planet.id in E[neig.id]: continue
             g.AddGraphEdge(G[planet.id], G[neig.id])
-            E_labels.InsertNextValue("edge")
+            reqDebug = request.debug.get(planet.id,{}).get(neig.id,None)
+            label = "\n".join(["%s - %s" % tuple(x) for x in reqDebug.iteritems()]) if reqDebug else ""
+            E_labels.InsertNextValue(label)
             E[neig.id].add(planet.id)
             E[planet.id].add(neig.id)
 

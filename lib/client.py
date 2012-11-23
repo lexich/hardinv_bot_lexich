@@ -141,7 +141,7 @@ class Client(ClientBase):
     for planet in response.planets:
       p = Planet(planet, planets, self.user)
       planets[p.id] = p
-    request = Request(self.token)
+    request = Request(self.token,planets)
     self.handle(planets, request)
     return  self.action(request)
 
