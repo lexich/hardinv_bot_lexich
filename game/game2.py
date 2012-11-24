@@ -119,16 +119,15 @@ class MixinStrategies(object):
     """
     Реализация быстрого нападения
     """
-    kPlanetFull = 0.5
+    kPlanetFull = 0.3
     kDroidsAttack = 0.7
-    kResist = 0.9
-
+    kResist = 0.7
     #Атака {kDroidsAttack} дройдов
     attackDroids = _from.droids * kDroidsAttack
     #Если сосед не враг
     if not _to.is_enemy:
       #Проверяем окружение планеты приемника на злобность
-      if attackDroids > _to.neighboursDanger() * kResist:
+      if attackDroids > _to.neighboursDanger() * kResist:        
         request.add(_from.id, _to.id, _from.sendDroids(attackDroids), "rush")
     #Если сосед - враг
     else:
@@ -151,7 +150,7 @@ class MixinStrategies(object):
     #И одновременная атака нас не уничтожит
     #Переселяем всю планету кроме сухого остатка
     if _from.limit < _to.limit and\
-       (_from.droids - explorerAttack) * resistanceRating > _to.danger:
+       (_from.droids - explorerAttack)  > _to.danger* resistanceRating:
       request.add(_from.id, _to.id, _from.sendDroids(_from.droids), "explorer")
     #Если допустима атака выше атаки исследования и ретинг роста позволяет
     #Начинаем исследование планет
@@ -297,12 +296,12 @@ class GameConfig(Client):
           #Если текущая позиция требует передислокации
           #Ищем более сильные другие планеты поблизости
           powerfullNear = src.powerfullOtherNeighboursPlanets()
-          #Если есть переселяемся на более подходящую
+          #Если есть переселяемся на более подходящую          
           if len(powerfullNear) > 0:
             self.trySendDroids(plan, src, powerfullNear[0], "rush")
             continue
           #Если нет смотрим карту в целом
-          else:
+          else:            
             worldpowerfullNear = sorted(
               filter(
                 lambda item: item[1] > src.limit and not item[1] in powerfullNear,
@@ -310,16 +309,16 @@ class GameConfig(Client):
               ),
               key=lambda iterPlaner: iterPlaner[1].limit,
               reverse=True
-            )
+            )            
             #ecли на карте есть другие сильные планеты
             if len(worldpowerfullNear) > 0:
               #Находим ближайшую планету
               roadMap = {}
 
-              for wPlanet in worldpowerfullNear:
-                result = src.searchPathToTarget(wPlanet)
+              for id, wPlanet in worldpowerfullNear:
+                result = src.searchPathToTarget(wPlanet)                
                 if result:
-                  roadMap.update(result)
+                  roadMap.update(result)              
               if len(roadMap.keys()) > 0:
                 targetRoad = roadMap[min(roadMap.keys())]
                 self.trySendDroids(plan, src, targetRoad, "rush")
@@ -405,4 +404,5 @@ class Game(MixinStrategies, GameConfig):
 
     for strategy in self.STRATEGIES:
       self.execute(plan, request, strategy)
-    print [(id, len(arr)) for id, arr in plan["strategy"].iteritems()]
+
+    print request.debugFull

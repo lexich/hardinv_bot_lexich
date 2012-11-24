@@ -2,13 +2,14 @@ __author__ = 'lexich'
 
 import vtk
 
-
-
-
 class BaseInteractorStyle(vtk.vtkInteractorStyleRubberBand2D):
   def __init__(self, parent=None):
     self.AddObserver("KeyPressEvent", self.keyPressEvent)
     self.counter = 0
+    self.g = None
+
+  def setGame(self,game):
+    self.g = game
 
   def setRef(self, ref):
     self.ref = ref
@@ -49,18 +50,38 @@ class Visualize(object):
     self.graphLayoutView.SetEdgeLabelVisibility(1)
     self.graphLayoutView.SetVertexLabelArrayName("VLabels")
     self.graphLayoutView.SetVertexLabelVisibility(1)
+
+    self.graphLayoutView.SetVertexColorArrayName("vertex_degree_centrality")
+    self.graphLayoutView.SetColorVertices(True)
+
+    theme = vtk.vtkViewTheme.CreateMellowTheme()
+    theme.SetLineWidth(2)
+    theme.SetPointSize(10)
+    theme.SetCellOpacity(1)
+    theme.SetSelectedCellColor(1,0,1)
+    self.graphLayoutView.ApplyViewTheme(theme)
+
+    theme.FastDelete()
+    self.graphLayoutView.GetRenderWindow().SetSize(1366, 700)
+
+    self.graphLayoutView.SetVertexLabelFontSize(9)
+    self.graphLayoutView.SetEdgeLabelFontSize(9)
+
     self.graphLayoutView.ResetCamera()
     self.graphLayoutView.Render()
 
+  def _init(self):
+    g = vtk.vtkMutableDirectedGraph()
+    v1 = g.AddVertex()
+    v2 = g.AddVertex()
+    g.AddGraphEdge(v1,v2)
+    return g
 
-  def start(self):
+  def start(self, game):
     self.irenStyle = self.clsInteractor()
     self.irenStyle.setRef(self)
-    self.addRepresentation(vtk.vtkMutableDirectedGraph)
+    self.irenStyle.setGame(game)
+    self.addRepresentation(self._init)
     interactor = self.graphLayoutView.GetInteractor()
     interactor.SetInteractorStyle(self.irenStyle)
     interactor.Start()
-
-if __name__ == "__main__":
-  vis = Visualize(BaseInteractorStyle)
-  vis.start()

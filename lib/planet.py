@@ -195,29 +195,37 @@ class Planet(object):
     result = filter(lambda x: not x.is_myself and x.limit > self.limit, self.neighbours)
     return sorted( result, key=lambda x:x.limit, reverse=True)
 
-  def searchPathToTarget(self,targetPlanet,roadLong=0,exclude=set()):
+  def searchPathToTarget(self,targetPlanet,roadLong=0,roadLimit=0,exclude=set()):
     """
     Найти соседнюю планету с коротой лучше начать путь до цели
+    Достаточно дорогая операция, максимально оптимизаровать результаты
     """
-    if self in exclude: return None
+    #Если найден путь более короткий, данное решение игнорируем
+    if roadLimit > 0 and roadLimit >= roadLong:
+      return
+    #Исключаем петли
+    if self in exclude:
+      return None
+
+    #Ищем по соседям
     neigPlanet = None
     exclude.add(self)
-    for p in self.neighbours:
-      exclude.add(p)
+    for p in self.neighbours:      
       if p == targetPlanet:
         neigPlanet = targetPlanet
         break
-    if not neigPlanet:
-      accumulator = []
-      for p in self.neighbours:
-        result = p.searchPathToTarget(targetPlanet,roadLong+1,exclude)
-        if result:
-          accumulator.append(result)
-      accumulator.sort(key=lambda r,ptr: r, reverse=True)
-      if len(accumulator) > 0:
-        return accumulator[0]
+    #Если следующий переход к цели найден
+    if neigPlanet:
+      return {roadLong:neigPlanet}
 
-    return {roadLong:neigPlanet} if neigPlanet else None
+    #Продолжаем рекурсивный поиск
+    searchResult = None
+    for p in self.neighbours:
+      result = p.searchPathToTarget(targetPlanet,roadLong+1,roadLimit,exclude)
+      if result:
+        roadLimit = max(min(result.keys()),roadLimit)
+        searchResult = result
+    return searchResult
 
   @property
   def percent(self):
@@ -236,6 +244,7 @@ class Request(object):
     self.actions = []
     self.planets = planets
     self.debug = {}
+    self.debugFull = []
 
   def add(self, _from, _to, unitscount, strategy=""):
     if not self.planets[_from].is_myself:
@@ -252,6 +261,7 @@ class Request(object):
     })
 
   def addDebug(self, _from, _to, unitscount, strategy):
+
     val = {
       "from": _from,
       "to": _to,
@@ -264,6 +274,7 @@ class Request(object):
       self.debug[_to] = {}
     self.debug[_from][_to] = val
     self.debug[_to][_from] = val
+    self.debugFull.append("%s - %s" % (strategy,unitscount))
 
 
   @property
