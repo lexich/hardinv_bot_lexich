@@ -5,9 +5,10 @@ from datetime import datetime
 import traceback
 import sys
 from dom import DomEl
+from request import Request
 from signals import GameOver, Win, InterruptGame
 
-from planet import Planet, Request
+from planet import Planet
 from xml.dom.minidom import parseString
 import os
 
