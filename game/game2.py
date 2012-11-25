@@ -37,7 +37,13 @@ class MixinStrategies(object):
     #Если достаточно дройдов для захвата
     if _from.droids >= needToAttack:
       #Если опасность не угрожает
-      if _from.danger < _from.droids - needToAttack:
+      #Патчим метод _from.get_danger()
+      #Уменьшаем уровень опасности атакуемой планеты на величину атаки
+      rating = _from.get_danger_rating()
+      rating[_to.owner] -= needToAttack
+      _from_danger = max(rating.values()) if len(rating.values()) > 0 else 0
+
+      if _from_danger < _from.droids - needToAttack:
         request.add(_from.id, _to.id, _from.sendDroids(needToAttack, limit=1), "aggressive")
         return
 

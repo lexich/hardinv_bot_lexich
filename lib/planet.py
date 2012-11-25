@@ -122,7 +122,7 @@ class Planet(object):
       return self.droids + self.maxMyselfNeighboursAttack() < self.danger * dangerResist
 
   @cache
-  def get_danger(self):
+  def get_danger_rating(self):
     rating = {}
     if self.is_enemy:
       rating[self.owner] = self.droids
@@ -132,6 +132,11 @@ class Planet(object):
       if not rating.has_key(n.owner):
         rating[n.owner] = 0
       rating[n.owner] += n.droids
+    return rating
+
+  @cache
+  def get_danger(self):
+    rating = self.get_danger_rating()
     return max(rating.values()) if len(rating.values()) > 0 else 0
 
   @property
