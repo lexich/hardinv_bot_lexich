@@ -44,6 +44,7 @@ class MixinStrategies(object):
       _from_danger = max(rating.values()) if len(rating.values()) > 0 else 0
 
       if _from_danger < _from.droids - needToAttack:
+        _from.set_fast_strategy()
         request.add(_from.id, _to.id, _from.sendDroids(needToAttack, limit=1), "aggressive")
         return
 
@@ -58,10 +59,12 @@ class MixinStrategies(object):
         if kSupport < 0:
           return
           #Отправляем на атаку
+        _from.set_fast_strategy()
         request.add(_from.id, _to.id, _from.sendDroids(needToAttack, limit=1), "aggressive")
         #Равномерно оказываем поддержку
         for friend in friends:
           droids = int(math.ceil(friend.attack * kSupport))
+          _from.set_fast_strategy()
           request.add(friend.id, _from.id, friend.sendDroids(droids), "aggressive")
         return
         #Если агрессивное нападение не удалось пробрасваем его до умеренного
@@ -92,6 +95,7 @@ class MixinStrategies(object):
 
       #Если атака больше {kResist} сопротивления
       if attackDroids > maxResist * kResist:
+        _from.set_fast_strategy()
         request.add(_from.id, _to.id, _from.sendDroids(attackDroids), "rush")
 
   def strategy_support(self, plan, request, _from, _to):
@@ -148,7 +152,7 @@ class MixinStrategies(object):
     maxAttack = sum(map(
       lambda item: item[0].attack, to_plan
     )) if len(to_plan) > 0 else 0
-    #Если атака меньше 90% то отказываемся
+    #Если максимаотная атака меньше 90% то отказываемся
     if maxAttack < _to.danger * attackPersentBarrier:
       #Но если планета заполнена атакуем в любом случае
       if _from.growRating(_from.droids) < 3:
@@ -182,7 +186,7 @@ class MixinStrategies(object):
       toDanger = _to.fullNeighboursDanger(fromDanger)
       if fromDanger > toDanger:
         return
-
+    _from.set_fast_strategy()
     request.add(_from.id, _to.id, _from.sendDroids(droidsRedistribution), "redistribution")
 
   def strategy_runaway(self, plan, request, _from, _to):
@@ -197,6 +201,12 @@ class MixinStrategies(object):
   def is_strategy_check(self, plan, request, _from, _to, _strategy):
     if _strategy == "runaway":
       return True
+    # Если для источника была использована быстрая стратегия, а его используют
+    # для исследования иои быстрых стратегий,
+    # то отказываемся, тк быстрая стратегия уже подразумевает захват новой территории
+    if _strategy in ("explorer","rush","aggressive","redistribution") and _from.is_fast_strategy():
+      return False
+
     if not _from.is_myself:
       print "ERROR: is_strategy_check _from is not myself"
       return False

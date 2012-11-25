@@ -49,6 +49,13 @@ class Planet(object):
     self.type = obj.type.val
     self.droids = obj.droids.to_int
     self._neighbours = obj.neighbours
+    self._fast_stategy = False
+
+  def set_fast_strategy(self):
+    self._fast_stategy = True
+
+  def is_fast_strategy(self):
+    return self._fast_stategy
 
   def __unicode__(self):
     return "%s %s" % (self.user, self.id)
