@@ -75,6 +75,16 @@ class Visualize(object):
     v1 = g.AddVertex()
     v2 = g.AddVertex()
     g.AddGraphEdge(v1,v2)
+    G_labels = vtk.vtkStringArray()
+    G_labels.SetName("VLabels")
+    G_labels.InsertNextValue("One")
+    G_labels.InsertNextValue("Two")
+    g.GetVertexData().AddArray(G_labels)
+    G_labels = vtk.vtkStringArray()
+    G_labels.SetName("VLabels")
+    G_labels.InsertNextValue("Three")
+    G_labels.InsertNextValue("Four")
+    g.GetVertexData().AddArray(G_labels)
     return g
 
   def start(self, game):
