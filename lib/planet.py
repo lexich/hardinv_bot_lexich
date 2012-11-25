@@ -114,7 +114,12 @@ class Planet(object):
 
   @cache
   def is_dead(self):
-    return self.danger * 0.7 > self.droids + self.maxMyselfNeighboursAttack()
+    dangerResist = 0.7
+    if not self.is_myself:
+      myAttack = sum(map(lambda x:x.droids, self.neighboursMyself()))
+      return myAttack < self.danger * dangerResist
+    else:
+      return self.droids + self.maxMyselfNeighboursAttack() < self.danger * dangerResist
 
   @cache
   def get_danger(self):
@@ -191,11 +196,30 @@ class Planet(object):
     return not self.is_free and self.owner != self.user
 
   @cache
-  def powerfullOtherNeighboursPlanets(self):
-    result = filter(lambda x: not x.is_myself and x.limit > self.limit, self.neighbours)
-    return sorted( result, key=lambda x:x.limit, reverse=True)
+  def findMyNearsPlanets(self):
+    "Найти мои ближайшие планеты"
+    result = self.recurciveFindMyNearsPlanets(self)
+    return result[1] if result  else []
 
-  def searchPathToTarget(self,targetPlanet,roadLong=0,roadLimit=0,exclude=set()):
+  def recurciveFindMyNearsPlanets(self, planet, roadLong=0, roadLimit=0, exclude=set()):
+    if roadLimit > 0 and roadLimit < roadLong:
+      return None
+    myPlanets = planet.neighboursMyself() or []
+    if len(myPlanets) <= 0:
+      #Добавим фильтр
+      new_exclude = exclude.copy()
+      new_exclude.update(planet.neighbours)
+      new_exclude.add(planet)
+      #Начинаем рекурсивный поиск
+      for p in planet.neighbours:
+        if p in exclude: continue
+        result = self.recurciveFindMyNearsPlanets(p, roadLong + 1, roadLimit, new_exclude)
+        if result and (roadLimit == 0 or result[0] < roadLimit):
+          roadLimit, myPlanets = result
+    return (roadLong, myPlanets) if len(myPlanets) > 0 else None
+
+
+  def searchPathToTarget(self, targetPlanet, roadLong=0, roadLimit=0, exclude=set()):
     """
     Найти соседнюю планету с коротой лучше начать путь до цели
     Достаточно дорогая операция, максимально оптимизаровать результаты
@@ -204,28 +228,25 @@ class Planet(object):
     if roadLimit > 0 and roadLimit >= roadLong:
       return
     #Исключаем петли
+
     if self in exclude:
       return None
-
-    #Ищем по соседям
-    neigPlanet = None
+    exclude = exclude.copy()
     exclude.add(self)
-    for p in self.neighbours:      
-      if p == targetPlanet:
-        neigPlanet = targetPlanet
-        break
-    #Если следующий переход к цели найден
-    if neigPlanet:
-      return {roadLong:neigPlanet}
+
+    searchNeighbours = filter(lambda x:x==targetPlanet, self.neighbours)
+    if len(searchNeighbours) > 0:
+      return roadLong,searchNeighbours[0]
 
     #Продолжаем рекурсивный поиск
-    searchResult = None
+    searchPath = None
     for p in self.neighbours:
-      result = p.searchPathToTarget(targetPlanet,roadLong+1,roadLimit,exclude)
-      if result:
-        roadLimit = max(min(result.keys()),roadLimit)
-        searchResult = result
-    return searchResult
+      if p in exclude: continue
+      result = p.searchPathToTarget(targetPlanet, roadLong + 1, roadLimit, exclude.copy())
+      if result and (roadLimit==0 or roadLimit > result[0]):
+        roadLimit = result[0]
+        searchPath = p
+    return roadLimit, searchPath
 
   @property
   def percent(self):
@@ -261,7 +282,6 @@ class Request(object):
     })
 
   def addDebug(self, _from, _to, unitscount, strategy):
-
     val = {
       "from": _from,
       "to": _to,
@@ -274,7 +294,7 @@ class Request(object):
       self.debug[_to] = {}
     self.debug[_from][_to] = val
     self.debug[_to][_from] = val
-    self.debugFull.append("%s - %s" % (strategy,unitscount))
+    self.debugFull.append("%s - %s" % (strategy, unitscount))
 
 
   @property

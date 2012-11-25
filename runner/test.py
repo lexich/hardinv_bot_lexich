@@ -16,7 +16,8 @@ class TestGame(Game):
     root, folders, files = os.walk("log").next()
     folders.sort()
     #self.findFolder = folders[random.randint(0, len(folders) - 1)]
-    self.findFolder = "2012-11-23-21-15-29"
+    self.findFolder = folders[len(folders) - 1]
+    #self.findFolder = "2012-11-25-01-59-31"
     super(TestGame, self).__init__(*args, **kwargs)
     print "FOLDER:%s" % self.findFolder
 
