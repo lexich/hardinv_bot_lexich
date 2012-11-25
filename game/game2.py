@@ -400,22 +400,45 @@ class Game(MixinStrategies, GameConfig):
 
   def actionGlobalStrategy(self, planetLimitRating, neighbours, planets, request,
                            plan):
+    #Если свободные планеты отсутствуют, пропускаем
     if len(planetLimitRating["free"].keys()) <= 0:
       return
+      #Фильтр для того чтобы одна и таже планета источник не участвовала дважды
     exclude = set()
+    #Сортируем свободные планеты начиная с самых жирных
     keysPriority = sorted(planetLimitRating["free"].keys(), reverse=True)
     for limit in keysPriority:
       freePlanets = planetLimitRating["free"][limit]
+
+      roadMap = {}
       for free in freePlanets:
-        findmyPlanets = free.findMyNearsPlanets()
-        myPlanets = filter(lambda x: x.limit < limit, findmyPlanets)
-        for p in myPlanets:
-          pathToTarget = p.searchPathToTarget(free)
-          if not pathToTarget: continue
-          roadLong, target = pathToTarget
-          if p in exclude: continue
-          exclude.add(p)
-          self.trySendDroids(plan, p, target, "rush")
+        result = free.findMyNearsPlanets()
+        if not result: continue
+        roadLong, findmyPlanets = result
+        if not roadMap.has_key(roadLong):
+          roadMap[roadLong] = {}
+        if not roadMap[roadLong].has_key(free.id):
+          roadMap[roadLong][free.id] = set()
+        roadMap[roadLong][free.id].update(findmyPlanets)
+
+        #Забираем из карты самый короткий маршрут
+      if len(roadMap.keys()) > 0:
+        #Находим планеты которым ближе всего до свободной планеты
+        nearstToFreePlanets = roadMap[min(roadMap.keys())]
+        for target_id, srcPlanets in nearstToFreePlanets.iteritems():
+          #Фильтруем планеты у которых лимит больше чем у свободной планеты
+          mySrcPlanets = filter(lambda x: x.limit < limit, srcPlanets)
+          #Получаем обьект свободной планеты
+          freePlanet = planets[target_id]
+          for src in mySrcPlanets:
+            #Ищем ближайшую планеты для перехода
+            pathToTarget = src.searchPathToTarget(freePlanet)
+            if not pathToTarget: continue
+            roadLong, target = pathToTarget
+            #Если данная планета участвовала в стратегии пропускаеи
+            if src in exclude: continue
+            exclude.add(src)
+            self.trySendDroids(plan, src, target, "rush")
 
   def actionGlobalSupport(self, myPlanets, neighbours, planets, request, plan):
     for id, target in myPlanets.iteritems():

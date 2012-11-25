@@ -204,7 +204,7 @@ class Planet(object):
   def findMyNearsPlanets(self):
     "Найти мои ближайшие планеты"
     result = self.recurciveFindMyNearsPlanets(self)
-    return result[1] if result  else []
+    return result if result  else None
 
   def recurciveFindMyNearsPlanets(self, planet, roadLong=0, roadLimit=0, exclude=set()):
     if roadLimit > 0 and roadLimit < roadLong:
