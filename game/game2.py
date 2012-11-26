@@ -54,10 +54,13 @@ class MixinStrategies(object):
       rating = _from.get_danger_rating()
       rating[_to.owner] -= needToAttack
       _from_danger = max(rating.values()) if len(rating.values()) > 0 else 0
-
-      if _from_danger < _from.droids - needToAttack:        
-        request.add(_from.id, _to.id, _from.sendDroids(needToAttack+9, limit=1), "aggressive")
-        return
+      #Если уровень опасности достаточен для атаки
+      if _from_danger < _from.droids - needToAttack:
+        if _from.limit < _to.limit:
+          request.add(_from.id, _to.id, _from.sendDroids(_from.droids), "aggressive")
+        else:
+          request.add(_from.id, _to.id, _from.sendDroids(needToAttack+9, limit=1), "aggressive")
+          return
 
       #Если опасность угрожает но есть подмога
       friends = filter(lambda x: x.is_myself, _from.neighbours)
@@ -104,7 +107,11 @@ class MixinStrategies(object):
 
       #Если атака больше {kResist} сопротивления
       if attackDroids > maxResist * kResist:
-        request.add(_from.id, _to.id, _from.sendDroids(attackDroids), "rush")
+        #Если атакуемая планета имеет более высокий тип
+        if _to.limit > _from.limit:
+          request.add(_from.id, _to.id, _from.sendDroids(_from.droids), "rush")
+        else:
+          request.add(_from.id, _to.id, _from.sendDroids(attackDroids), "rush")
 
   def strategy_support(self, plan, request, _from, _to):
     """
