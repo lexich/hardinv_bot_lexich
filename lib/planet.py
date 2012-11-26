@@ -94,6 +94,9 @@ class Planet(object):
 
   @cache
   def neighboursMyself(self):
+    """
+    Возвращаем только соседей друзей
+    """
     return filter(
       lambda x: x.is_myself,
       self.neighbours
@@ -230,30 +233,31 @@ class Planet(object):
     return (roadLong, myPlanets) if len(myPlanets) > 0 else None
 
 
-  def searchPathToTarget(self, targetPlanet, roadLong=0, roadLimit=0, exclude=set()):
+  def searchPathToTarget(self, targetPlanet, roadLong=0, roadLimit=0, _exclude=None):
     """
     Найти соседнюю планету с коротой лучше начать путь до цели
     Достаточно дорогая операция, максимально оптимизаровать результаты
     """
+    if not _exclude:
+      _exclude = set()
     #Если найден путь более короткий, данное решение игнорируем
-    if roadLimit > 0 and roadLimit >= roadLong:
+    if roadLimit > 0 and roadLong >= roadLimit:
       return
     #Исключаем петли
-
-    if self in exclude:
-      return None
-    exclude = exclude.copy()
-    exclude.add(self)
 
     searchNeighbours = filter(lambda x:x==targetPlanet, self.neighbours)
     if len(searchNeighbours) > 0:
       return roadLong,searchNeighbours[0]
 
+    if self.id in _exclude:
+      return None
+    _exclude.add(self.id)
+
     #Продолжаем рекурсивный поиск
     searchPath = None
     for p in self.neighbours:
-      if p in exclude: continue
-      result = p.searchPathToTarget(targetPlanet, roadLong + 1, roadLimit, exclude.copy())
+      if p.id in _exclude: continue
+      result = p.searchPathToTarget(targetPlanet, roadLong + 1, roadLimit, set(_exclude))
       if result and (roadLimit==0 or roadLimit > result[0]):
         roadLimit = result[0]
         searchPath = p
