@@ -38,13 +38,9 @@ class MixinStrategies(object):
       return
     if _from.limit > _to.limit:
       return
-    if _to.danger <= 0:
+    if _from.droids > _to.danger * attack_limit:
       _from.set_fast_strategy()
       request.add(_from.id, _to.id, _from.sendDroids(_from.droids, limit=1), "quickexplore")
-    else:
-      if _from.droids > _to.danger * attack_limit:
-        _from.set_fast_strategy()
-        request.add(_from.id, _to.id, _from.sendDroids(_from.droids, limit=1), "quickexplore")
 
   def strategy_aggressive(self, plan, request, _from, _to):
     """
@@ -236,7 +232,7 @@ class MixinStrategies(object):
       # Если для источника была использована быстрая стратегия, а его используют
     # для исследования иои быстрых стратегий,
     # то отказываемся, тк быстрая стратегия уже подразумевает захват новой территории
-    if _strategy in ("explorer", "rush", "aggressive", "redistribution") and _from.is_fast_strategy():
+    if _strategy in ("explorer", "rush", "aggressive", "redistribution", "quickexplore") and _from.is_fast_strategy():
       return False
 
     if not _from.is_myself:
