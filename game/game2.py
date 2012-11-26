@@ -38,8 +38,7 @@ class MixinStrategies(object):
       return
     if _from.limit > _to.limit:
       return
-    if _from.droids > _to.danger * attack_limit:
-      _from.set_fast_strategy()
+    if _from.droids > _to.danger * attack_limit:      
       request.add(_from.id, _to.id, _from.sendDroids(_from.droids, limit=1), "quickexplore")
 
   def strategy_aggressive(self, plan, request, _from, _to):
@@ -56,8 +55,7 @@ class MixinStrategies(object):
       rating[_to.owner] -= needToAttack
       _from_danger = max(rating.values()) if len(rating.values()) > 0 else 0
 
-      if _from_danger < _from.droids - needToAttack:
-        _from.set_fast_strategy()
+      if _from_danger < _from.droids - needToAttack:        
         request.add(_from.id, _to.id, _from.sendDroids(needToAttack, limit=1), "aggressive")
         return
 
@@ -72,12 +70,10 @@ class MixinStrategies(object):
         if kSupport < 0:
           return
           #Отправляем на атаку
-        _from.set_fast_strategy()
         request.add(_from.id, _to.id, _from.sendDroids(needToAttack, limit=1), "aggressive")
         #Равномерно оказываем поддержку
         for friend in friends:
           droids = int(math.ceil(friend.attack * kSupport))
-          _from.set_fast_strategy()
           request.add(friend.id, _from.id, friend.sendDroids(droids), "aggressive")
         return
         #Если агрессивное нападение не удалось пробрасваем его до умеренного
@@ -96,7 +92,6 @@ class MixinStrategies(object):
     if not _to.is_enemy:
       #Проверяем окружение планеты приемника на злобность
       if attackDroids > _to.get_danger() * kResist:
-        _from.set_fast_strategy()
         request.add(_from.id, _to.id, _from.sendDroids(attackDroids), "rush")
     #Если сосед - враг
     else:
@@ -109,7 +104,6 @@ class MixinStrategies(object):
 
       #Если атака больше {kResist} сопротивления
       if attackDroids > maxResist * kResist:
-        _from.set_fast_strategy()
         request.add(_from.id, _to.id, _from.sendDroids(attackDroids), "rush")
 
   def strategy_support(self, plan, request, _from, _to):
@@ -183,8 +177,9 @@ class MixinStrategies(object):
     #Если рейтинг роста планеты источника больше 1(хода) то не учасвуем
     if _from.growRating(_from.droids) > 1:
       return
-      #Вычисляем колличество дройдов для перераспределения
-    droidsRedistribution = _from.droids - int(_from.limit / (1 + _from.percent))
+    #Вычисляем колличество дройдов для перераспределения c учетом тех дройдов которые могли сюда попасть по
+    #перераспределению
+    droidsRedistribution = _from.droids - int(_from.limit / (1 + _from.percent)) + _from.receive_droids
 
     if droidsRedistribution < 0:
       print "executePlanRedistribution: Error droidsRedistribution %s" % droidsRedistribution
@@ -213,8 +208,7 @@ class MixinStrategies(object):
       #Если опасность соселей источника больше чем опасность соседей приемника, пропускаем
       if fromDanger > toDanger:
         return
-      #Если все фильтры пройдены, то перераспределяем
-    _from.set_fast_strategy()
+      #Если все фильтры пройдены, то перераспределяем    
     request.add(_from.id, _to.id, _from.sendDroids(droidsRedistribution), "redistribution")
 
   def strategy_runaway(self, plan, request, _from, _to):

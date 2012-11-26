@@ -50,6 +50,7 @@ class Planet(object):
     self.droids = obj.droids.to_int
     self._neighbours = obj.neighbours
     self._fast_stategy = False
+    self.receive_droids = 0
 
   def set_fast_strategy(self):
     self._fast_stategy = True

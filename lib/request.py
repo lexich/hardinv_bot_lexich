@@ -18,6 +18,10 @@ class Request(object):
       return
     elif unitscount < 0:
       return
+    if strategy in ("quickexplore","aggressive","rush","redistribution"):
+      self.planets[_from].set_fast_strategy()
+    self.planets[_to].receive_droids = int(unitscount)
+
     self.addDebug(_from, _to, unitscount, strategy)
     self.actions.append({
       "from": int(_from),
