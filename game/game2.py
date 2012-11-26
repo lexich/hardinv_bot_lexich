@@ -39,7 +39,7 @@ class MixinStrategies(object):
     if _from.limit > _to.limit:
       return
     if _from.droids > _to.danger * attack_limit:      
-      request.add(_from.id, _to.id, _from.sendDroids(_from.droids, limit=1), "quickexplore")
+      request.add(_from.id, _to.id, _from.sendDroids(_from.droids, limit=0), "quickexplore")
 
   def strategy_aggressive(self, plan, request, _from, _to):
     """
@@ -56,7 +56,7 @@ class MixinStrategies(object):
       _from_danger = max(rating.values()) if len(rating.values()) > 0 else 0
 
       if _from_danger < _from.droids - needToAttack:        
-        request.add(_from.id, _to.id, _from.sendDroids(needToAttack, limit=1), "aggressive")
+        request.add(_from.id, _to.id, _from.sendDroids(needToAttack+9, limit=1), "aggressive")
         return
 
       #Если опасность угрожает но есть подмога
@@ -160,11 +160,12 @@ class MixinStrategies(object):
     maxAttack = sum(map(
       lambda item: item[0].attack, to_plan
     )) if len(to_plan) > 0 else 0
-    #Если максимаотная атака меньше 90% то отказываемся
+    #Если максимаотная атака меньше 90% то отказываемся но
     if maxAttack < _to.danger * attackPersentBarrier:
       #Но если планета заполнена атакуем в любом случае
       if _from.growRating(_from.droids) < 3:
-        request.add(_from.id, _to.id, _from.sendDroids(_from.attack), "patient")
+        request.add(_from.id, _to.id, _from.sendDroids(_from.attack), "patient")      
+
     else:
       for from_item in to_plan:
         src = from_item[0]
