@@ -147,9 +147,14 @@ class Client(ClientBase):
     return  self.action(request)
 
   testMode = False
-  def run(self):
-    safeEndGame = 0
-    safeEndGameMax = 3
+
+  def _end_game(self,txt=""):
+    log_error(txt)
+    if not self.testMode:
+      self.log.flush()
+
+
+  def run(self):    
     response = None
     while True:
       response = self.auth()
@@ -171,21 +176,18 @@ class Client(ClientBase):
         response = self._parceResponce(response)
         log_error("step:%s" % self.step)
       except Win, e:
-        log_error("You win")
-        break
+        self._end_game("You win")
+        break        
       except GameOver, e:
-        if safeEndGame > safeEndGameMax:
-          log_error("Game over")
-          break
-        safeEndGame += 1
+        self._end_game("Game over")
       except InterruptGame,e:
         log_error("Interrupt game")
         break
       except socket.error, e:
+        traceback.print_exc(file=sys.stderr)
         log_error(e.message)
       except Exception, e:
         traceback.print_exc(file=sys.stderr)
         log_error(e.message)
-    if not self.testMode:
-      self.log.flush()
+    
 

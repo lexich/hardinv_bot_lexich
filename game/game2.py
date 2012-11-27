@@ -6,6 +6,8 @@ import math
 
 __author__ = 'lexich'
 
+#TODO: global redistribution strategy
+
 def appendInDictOfArrayVal(d, key, value):
   if not d.has_key(key):
     d[key] = []
@@ -18,16 +20,25 @@ def updateInDictOfDictVal(d, key, val):
   d[key].update(val)
 
 
+AGGRESSIVE      = "aggressive"
+RUSH            = "rush"
+QUICKEXPLORE    = "quickexplore",
+SUPPORT         = "support",
+EXPLORER        = "explorer",
+PATIENT         = "patient",
+REDISTRIBUTION  = "redistribution",
+RUNAWAY         = "runaway"
+
 class MixinStrategies(object):
   STRATEGIES = (
-    "aggressive",
-    "rush",
-    "quickexplore",
-    "support",
-    "explorer",
-    "patient",
-    "redistribution",
-    "runaway"
+    AGGRESSIVE,
+    RUSH,
+    QUICKEXPLORE,
+    SUPPORT,
+    EXPLORER,
+    PATIENT,
+    REDISTRIBUTION,
+    RUNAWAY
     )
 
   def strategy_quickexplore(self, plan, request, _from, _to):
@@ -39,7 +50,7 @@ class MixinStrategies(object):
     if _from.limit > _to.limit:
       return
     if _from.droids > _to.danger * attack_limit:      
-      request.add(_from.id, _to.id, _from.sendDroids(_from.droids, limit=0), "quickexplore")
+      request.add(_from.id, _to.id, _from.sendDroids(_from.droids, limit=0), QUICKEXPLORE)
 
   def strategy_aggressive(self, plan, request, _from, _to):
     """
@@ -57,9 +68,9 @@ class MixinStrategies(object):
       #Если уровень опасности достаточен для атаки
       if _from_danger < _from.droids - needToAttack:
         if _from.limit < _to.limit:
-          request.add(_from.id, _to.id, _from.sendDroids(_from.droids), "aggressive")
+          request.add(_from.id, _to.id, _from.sendDroids(_from.droids), AGGRESSIVE)
         else:
-          request.add(_from.id, _to.id, _from.sendDroids(needToAttack+9, limit=1), "aggressive")
+          request.add(_from.id, _to.id, _from.sendDroids(needToAttack+9, limit=1), AGGRESSIVE)
           return
 
       #Если опасность угрожает но есть подмога
@@ -73,14 +84,14 @@ class MixinStrategies(object):
         if kSupport < 0:
           return
           #Отправляем на атаку
-        request.add(_from.id, _to.id, _from.sendDroids(needToAttack, limit=1), "aggressive")
+        request.add(_from.id, _to.id, _from.sendDroids(needToAttack, limit=1), AGGRESSIVE)
         #Равномерно оказываем поддержку
         for friend in friends:
           droids = int(math.ceil(friend.attack * kSupport))
-          request.add(friend.id, _from.id, friend.sendDroids(droids), "aggressive")
+          request.add(friend.id, _from.id, friend.sendDroids(droids), AGGRESSIVE)
         return
         #Если агрессивное нападение не удалось пробрасваем его до умеренного
-    super(MixinStrategies, self).trySendDroids(plan, _from, _to, "patient")
+    super(MixinStrategies, self).trySendDroids(plan, _from, _to, PATIENT)
 
   def strategy_rush(self, plan, request, _from, _to):
     """
@@ -95,7 +106,7 @@ class MixinStrategies(object):
     if not _to.is_enemy:
       #Проверяем окружение планеты приемника на злобность
       if attackDroids > _to.get_danger() * kResist:
-        request.add(_from.id, _to.id, _from.sendDroids(attackDroids), "rush")
+        request.add(_from.id, _to.id, _from.sendDroids(attackDroids), RUSH)
     #Если сосед - враг
     else:
       #Заполненность планеты
@@ -109,9 +120,9 @@ class MixinStrategies(object):
       if attackDroids > maxResist * kResist:
         #Если атакуемая планета имеет более высокий тип
         if _to.limit > _from.limit:
-          request.add(_from.id, _to.id, _from.sendDroids(_from.droids), "rush")
+          request.add(_from.id, _to.id, _from.sendDroids(_from.droids), RUSH)
         else:
-          request.add(_from.id, _to.id, _from.sendDroids(attackDroids), "rush")
+          request.add(_from.id, _to.id, _from.sendDroids(attackDroids), RUSH)
 
   def strategy_support(self, plan, request, _from, _to):
     """
@@ -125,7 +136,7 @@ class MixinStrategies(object):
       if maxSendDroids > 10 - _to.droids:
         needToSend = Planet.SPEED_GROW_RATING * _to.limit - _to.droids
         sendToDroids = maxSendDroids if needToSend > maxSendDroids else needToSend
-        request.add(_from.id, _to.id, _from.sendDroids(sendToDroids), "support")
+        request.add(_from.id, _to.id, _from.sendDroids(sendToDroids), SUPPORT)
         #если у планеты приемника меньше 10 юнитов то отправим недостающее кол-во
       if _to.droids < 10 and not _to.maxMyselfNeighboursAttack():
         neighboursMyselfCount = len(filter(
@@ -135,7 +146,7 @@ class MixinStrategies(object):
         sendDroids = math.ceil(
           (10.0 - _to.droids) / neighboursMyselfCount
         ) if neighboursMyselfCount > 0 else 10
-        request.add(_from.id, _to.id, _from.sendDroids(sendDroids), "support")
+        request.add(_from.id, _to.id, _from.sendDroids(sendDroids), SUPPORT)
 
   def strategy_explorer(self, plan, request, _from, _to):
     explorerAttack = 10
@@ -146,7 +157,7 @@ class MixinStrategies(object):
     #Переселяем всю планету кроме сухого остатка
     if _from.limit < _to.limit and\
        (_from.droids - explorerAttack) > _to.danger * resistanceRating:
-      request.add(_from.id, _to.id, _from.sendDroids(_from.droids), "explorer")
+      request.add(_from.id, _to.id, _from.sendDroids(_from.droids), EXPLORER)
     #Если допустима атака выше атаки исследования и ретинг роста позволяет
     #Начинаем исследование планет
     elif _from.attack > explorerAttack and\
@@ -155,10 +166,10 @@ class MixinStrategies(object):
       #И уровень опасности больше атаки планеты источника
       #То отправляем дройда на разведку
       if _to.danger > _from.attack:
-        request.add(_from.id, _to.id, _from.sendDroids(1), "explorer")
+        request.add(_from.id, _to.id, _from.sendDroids(1), EXPLORER)
       #Иначе проводим настоящую атаку
       else:
-        request.add(_from.id, _to.id, _from.sendDroids(_to.danger + explorerAttack), "explorer")
+        request.add(_from.id, _to.id, _from.sendDroids(_to.danger + explorerAttack), EXPLORER)
 
   def strategy_patient(self, plan, request, _from, _to):
     attackPersentBarrier = 0.9
@@ -171,12 +182,12 @@ class MixinStrategies(object):
     if maxAttack < _to.danger * attackPersentBarrier:
       #Но если планета заполнена атакуем в любом случае
       if _from.growRating(_from.droids) < 3:
-        request.add(_from.id, _to.id, _from.sendDroids(_from.attack), "patient")      
+        request.add(_from.id, _to.id, _from.sendDroids(_from.attack), PATIENT)      
 
     else:
       for from_item in to_plan:
         src = from_item[0]
-        request.add(src.id, _to.id, src.sendDroids(src.attack), "patient")
+        request.add(src.id, _to.id, src.sendDroids(src.attack), PATIENT)
 
   def strategy_redistribution(self, plan, request, _from, _to):
     """
@@ -187,7 +198,7 @@ class MixinStrategies(object):
       return
     #Вычисляем колличество дройдов для перераспределения c учетом тех дройдов которые могли сюда попасть по
     #перераспределению
-    droidsRedistribution = _from.droids - int(_from.limit / (1 + _from.percent)) + _from.receive_droids
+    droidsRedistribution = _from.droids - int(_from.limit / ((1 + _from.percent))**1.5) + _from.receive_droids
 
     if droidsRedistribution < 0:
       print "executePlanRedistribution: Error droidsRedistribution %s" % droidsRedistribution
@@ -213,11 +224,18 @@ class MixinStrategies(object):
       #Вычисляем чьим соседям может понадобится помощь
       fromDanger = _from.fullNeighboursDanger()
       toDanger = _to.fullNeighboursDanger(fromDanger)
-      #Если опасность соселей источника больше чем опасность соседей приемника, пропускаем
-      if fromDanger > toDanger:
+      #Если опасность соселей приемника больше чем опасность соседей источника
+      #То исходя из того что враг далеко, увеличиваем размер атаки на кол-во регенерации за 2 хода
+      if fromDanger < toDanger: 
+        #TODO: code don't work
+        print "DOUBLE REDISTRIBUTION"
+        droidsRedistribution2 = _from.droids - int(_from.limit / ((1 + _from.percent)**2)) + _from.receive_droids        
+        request.add(_from.id, _to.id, _from.sendDroids(droidsRedistribution2), REDISTRIBUTION)
         return
-      #Если все фильтры пройдены, то перераспределяем    
-    request.add(_from.id, _to.id, _from.sendDroids(droidsRedistribution), "redistribution")
+
+
+    #Если все фильтры пройдены, то перераспределяем    
+    request.add(_from.id, _to.id, _from.sendDroids(droidsRedistribution), REDISTRIBUTION)
 
   def strategy_runaway(self, plan, request, _from, _to):
     if not _from.is_myself:
@@ -226,15 +244,15 @@ class MixinStrategies(object):
       return
     if _to.danger > _from.droids:
       return
-    request.add(_from.id, _to.id, _from.sendDroids(_from.droids, limit=0), "runaway")
+    request.add(_from.id, _to.id, _from.sendDroids(_from.droids, limit=0), RUNAWAY)
 
   def is_strategy_check(self, plan, request, _from, _to, _strategy):
-    if _strategy == "runaway":
+    if _strategy == RUNAWAY:
       return True
       # Если для источника была использована быстрая стратегия, а его используют
     # для исследования иои быстрых стратегий,
     # то отказываемся, тк быстрая стратегия уже подразумевает захват новой территории
-    if _strategy in ("explorer", "rush", "aggressive", "redistribution", "quickexplore") and _from.is_fast_strategy():
+    if _strategy in (EXPLORER, RUSH, AGGRESSIVE, QUICKEXPLORE) and _from.is_fast_strategy():
       return False
 
     if not _from.is_myself:
@@ -248,7 +266,7 @@ class MixinStrategies(object):
         _from.neighbours
       )
       for target in arr:
-        super(MixinStrategies, self).trySendDroids(plan, _from, target, "runaway")
+        super(MixinStrategies, self).trySendDroids(plan, _from, target, RUNAWAY)
         #если наша планета приемник мертва
     if _to.is_myself and _to.is_dead():
       #Находим живых не чужих соседей
@@ -257,7 +275,7 @@ class MixinStrategies(object):
         _to.neighbours
       )
       for target in arr:
-        super(MixinStrategies, self).trySendDroids(plan, _to, target, "runaway")
+        super(MixinStrategies, self).trySendDroids(plan, _to, target, RUNAWAY)
     if _from.is_dead() or _to.is_dead():
       return False
     return True
@@ -270,9 +288,9 @@ def _cmp_default(_x, _y):
 
 
 class GameConfig(Client):
-  def trySendDroids(self, plan, _from, _to, _strategy="patient"):
+  def trySendDroids(self, plan, _from, _to, _strategy=PATIENT):
     """
-    strategy ['aggressive','rush','explorer','patient','redistribution','support' ]
+    strategy [AGGRESSIVE,RUSH,EXPLORER,PATIENT,REDISTRIBUTION,SUPPORT ]
     """
     if not _from.is_myself:
       return
@@ -289,7 +307,7 @@ class GameConfig(Client):
 
   def execute(self, plan, request, strategy):
     items = plan["strategy"].get(strategy, [])
-    if strategy == "explorer":
+    if strategy == EXPLORER:
       items = sorted(
         items,
         key=lambda x: x[1].growRating()
@@ -306,7 +324,7 @@ class GameConfig(Client):
 
   def actionOneNeighbours(self, plan, src, target):
     if target.is_enemy:
-      self.trySendDroids(plan, src, target, "rush")
+      self.trySendDroids(plan, src, target, RUSH)
 
   def actionFixPosition(self, myPlanets, neighbours, planets, request, plan):
     ratingFilter = 0.5
@@ -325,19 +343,19 @@ class GameConfig(Client):
             if not src.danger:
               #Если опасность у соседей планеты приемника больше
               if target.neighboursDanger() > src.neighboursDanger():
-                self.trySendDroids(plan, src, target, "redistribution")
+                self.trySendDroids(plan, src, target, REDISTRIBUTION)
               else:
               #Если у соседей планет тоже все в поряке применяем глубокий поиск
                 fullTarget = target.fullNeighboursDanger()
                 fullSrc = src.fullNeighboursDanger(fullTarget)
                 if fullTarget > fullSrc:
-                  self.trySendDroids(plan, src, target, "redistribution")
+                  self.trySendDroids(plan, src, target, REDISTRIBUTION)
                 continue
             else:
               continue
           #У планета приемник в опасности
           else:
-            self.trySendDroids(plan, src, target, "redistribution")
+            self.trySendDroids(plan, src, target, REDISTRIBUTION)
         #Если на планете источнике переполнение не наблюдается
         else:
           #Если переселятся не собираемся
@@ -352,7 +370,7 @@ class GameConfig(Client):
               #Если планета приемник готова сопротивлятся агрессии, то пропускаем
             if target.droids > target.danger:
               continue
-            self.trySendDroids(plan, src, target, "patient")
+            self.trySendDroids(plan, src, target, PATIENT)
 
   def actionSendExplorers(self, myPlanets, neighbours, planets, request, plan):
     exclude = set()
@@ -365,7 +383,7 @@ class GameConfig(Client):
       for src in mySourcesPlanets:
         if src in exclude: continue
         exclude.add(src)
-        self.trySendDroids(plan, src, target, "explorer")
+        self.trySendDroids(plan, src, target, EXPLORER)
 
   def actionAttackEnemy(self, myPlanets, neighbours, planets, request, plan):
     for id, target in neighbours["enemy"].iteritems():
@@ -379,9 +397,9 @@ class GameConfig(Client):
           lambda x: x.is_enemy,
           target.neighbours
         )) == 0:
-          self.trySendDroids(plan, src, target, "aggressive")
+          self.trySendDroids(plan, src, target, AGGRESSIVE)
         else:
-          self.trySendDroids(plan, src, target, "patient")
+          self.trySendDroids(plan, src, target, PATIENT)
 
   def actionGlobalFreeRush(self, planetLimitRating, neighbours, planets, request,
                            plan):
@@ -429,9 +447,9 @@ class GameConfig(Client):
           if src in exclude: continue
           exclude.add(src)
           if target.is_enemy:
-            self.trySendDroids(plan, src, target, "rush")
+            self.trySendDroids(plan, src, target, RUSH)
           else:
-            self.trySendDroids(plan, src, target, "quickexplore")
+            self.trySendDroids(plan, src, target, QUICKEXPLORE)
 
   def actionGlobalSupport(self, myPlanets, neighbours, planets, request, plan):
     """
@@ -440,7 +458,7 @@ class GameConfig(Client):
     for id, target in myPlanets.iteritems():
       if target.speedGrowRating() > Planet.SPEED_GROW_RATING: continue
       neigh = sorted(target.neighbours, key=lambda x: x.droids, reverse=True)
-      self.trySendDroids(plan, neigh[0], target, "support")
+      self.trySendDroids(plan, neigh[0], target, SUPPORT)
 
 
 class Game(MixinStrategies, GameConfig):
