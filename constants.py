@@ -45,10 +45,15 @@ EXPLORER_ATTACK = 10
 # Минимальный рейтин планеты который необходим для начала применения стратегии
 EXPLORER_GROW_RATING = 7
 
-REDISTRIBUTION_MULTIPLICATOR = 1
+REDISTRIBUTION_MULTIPLICATOR = 2
 REDISTRIBUTION_MAX_MULTIPLICATOR = 2
 # Устанавливает рейтинг для запертой планеты, для которой
 # не нужно перераспределение
 REDISTRIBUTION_SINGLE_GROW_FILTER = 2
 
 ACTION_FIXPOSITION_RATING_FILTER = 0.5
+
+# Рейтинг для атаки используется в Game.attack
+# показывает какой должен быть рейтиг планеты, чтобы она 
+# могла атаковать
+GAME_RATING_ATTACK = 3

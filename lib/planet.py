@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import math
-
+from constants import *
 __author__ = 'lexich'
 
 
@@ -42,12 +42,21 @@ class Planet(object):
     self.id = obj.attr("id")
     self.planets = planets
     planets[self.id] = self
+    #владелец
     self.owner = obj.owner.val
+    #тип планеты
     self.type = obj.type.val
-    self.droids = obj.droids.to_int
+    #актуальное кол-во дройдов
+    self.droids = obj.droids.to_int 
+    #базовое кол-во дройдов
+    self.droids_base = self.droids
+    #id сосдей
     self._neighbours = obj.neighbours
+    #метка использования быстрой стратегии
     self._fast_stategy = False
+    #полученные дройды
     self.receive_droids = 0
+    #источники полученных дройдов
     self.receive_from = []
 
   def set_fast_strategy(self):
@@ -178,9 +187,6 @@ class Planet(object):
   def grow(self):
     return self.droids * (1 + self.percent)
 
-  #рейтинг для атаки
-  RATING_ATTACK = 3
-
   @property
   def attack(self):
     """
@@ -188,7 +194,7 @@ class Planet(object):
     """
     attack = 0
     rating = self.growRating(self.droids)
-    if rating < self.RATING_ATTACK:
+    if rating < GAME_RATING_ATTACK:
       attack = int(self.droids * self.percent)
       if self.danger > self.droids - attack:
         attack = self.droids - self.danger

@@ -5,11 +5,6 @@ from helpers import *
 
 __author__ = 'lexich'
 
-def _cmp_default(_x, _y):
-  x, y = _x[1], _y[1]
-  result = cmp(x.danger, y.danger)
-  return result if result != 0 else cmp(x.limit, y.limit)
-
 class GameActions(Client):
   def trySendDroids(self, plan, _from, _to, _strategy=PATIENT):
     """
@@ -28,6 +23,11 @@ class GameActions(Client):
         plan[key][id] = []
       plan[key][id].append(value)
 
+  def _cmp_default(self,_x, _y):
+    x, y = _x[1], _y[1]
+    result = cmp(x.danger, y.danger)
+    return result if result != 0 else cmp(x.limit, y.limit)
+
   def execute(self, plan, request, strategy):
     items = plan["strategy"].get(strategy, [])
     if strategy == EXPLORER:
@@ -36,7 +36,7 @@ class GameActions(Client):
         key=lambda x: x[1].growRating()
       )
     else:
-      items = sorted(items, cmp=_cmp_default, reverse=True)
+      items = sorted(items, cmp=self._cmp_default, reverse=True)
     func = getattr(self, "strategy_%s" % strategy, None)
     if not func:
       return

@@ -203,7 +203,8 @@ class MixinStrategies(object):
       return
 
     #Если рейтинг планет учавствующих в обмене меньше 1(хода)
-    if to_growRating_full <= 1 and from_growRating_full <= 1:
+    #при этом если планета приемник уже отправляла дройдов, то не берем это в расчет
+    if _to.growRating(_to.droids_base) <= 1 and from_growRating_full <= 1:
       #Если дройдов на приемнике больше чем в источнике, пропускаем
       #if _to.droids > _from.droids:
       #  return
