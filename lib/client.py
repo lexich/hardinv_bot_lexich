@@ -170,11 +170,13 @@ class Client(ClientBase):
       self.log.start()
     while True:
       try:
+        start = datetime.now()
         if len(response.errors) > 0:
           for error in response.errors:
             log_error("ERROR: %s" % error)
         response = self._parceResponce(response)
-        log_error("step:%s" % self.step)
+        delta = datetime.now() - start
+        log_error("step:%s speed:%s" % (self.step,delta.total_seconds()))
       except Win, e:
         self._end_game("You win")
         break        

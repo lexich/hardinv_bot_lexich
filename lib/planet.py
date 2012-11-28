@@ -18,9 +18,6 @@ def cache(func):
 
 
 class Planet(object):
-  #Рейтинг показывает удовлетворительную
-  #скорость прироста дройдов, которая вычисляется speedGrowRating
-  SPEED_GROW_RATING = 0.3
   PROPERTY = {
     "TYPE_A": {
       "p": 0.1,
@@ -51,6 +48,7 @@ class Planet(object):
     self._neighbours = obj.neighbours
     self._fast_stategy = False
     self.receive_droids = 0
+    self.receive_from = []
 
   def set_fast_strategy(self):
     self._fast_stategy = True
