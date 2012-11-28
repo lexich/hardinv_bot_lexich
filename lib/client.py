@@ -105,11 +105,9 @@ class ClientBase(object):
     data = self._recv()
     if data != "":
       return DomEl(parseString(data))
-    else:
-      return DomEl(parseString(""))
+    return None
 
   def send(self, request):
-    #log_error(unicode(request))
     return self._send(request.to_xml)
 
   def handle(self, planets, request):
@@ -117,79 +115,85 @@ class ClientBase(object):
 
 
 class Client(ClientBase):
+  testMode = False
+
   def __init__(self, host, port, token, user):
     super(Client, self).__init__(host, port)
     self.token = token
     self.user = user
-
-  def auth(self):
-    self.connect()
-    self.send(Request(self.token))
-    root = self.recv()
-    self.close()
-    return root.response
+    self.start_game = None
 
   def action(self, request):
-    self.connect()
-    self.send(request)
-    root = self.recv()
-    self.close()
+    root = None
+    while not root:      
+      try:
+        self.connect()
+        self.send(request)
+        root = self.recv()
+        self.close()
+        if not root:
+          continue
+      except socket.error, e:
+          traceback.print_exc(file=sys.stderr)
+          log_error(e.message)
+      except Exception, e:
+        traceback.print_exc(file=sys.stderr)
+        log_error(e.message)
     return root.response
 
-  def _parceResponce(self, response):
-    self.step += 1
-    planets = {}
-    for planet in response.planets:
-      p = Planet(planet, planets, self.user)
-      planets[p.id] = p
-    request = Request(self.token,planets)
-    self.handle(planets, request)
-    return  self.action(request)
-
-  testMode = False
+  def _start_game(self,txt=""):
+    if self.start_game is None:
+      log_error(txt)
+    self.start_game = True
 
   def _end_game(self,txt=""):
     log_error(txt)
     if not self.testMode:
       self.log.flush()
+    self.start_game = False
 
-
-  def run(self):    
+  def start(self):
     response = None
-    while True:
-      response = self.auth()
-      errors = response.errors
-      if len(errors) > 0:
-        for error in errors:
-          log_error("error:%s" % error)
-      else:
-        break
-
-    log("Begin Game")
-    if not self.testMode:
-      self.log.start()
-    while True:
+    request = Request(self.token)    
+    while self.start_game is not False:
       try:
-        start = datetime.now()
-        if len(response.errors) > 0:
-          for error in response.errors:
-            log_error("ERROR: %s" % error)
-        response = self._parceResponce(response)
-        delta = datetime.now() - start
-        log_error("step:%s speed:%s" % (self.step,delta.total_seconds()))
-      except Win, e:
-        self._end_game("You win")
-        break        
-      except GameOver, e:
-        self._end_game("Game over")
-      except InterruptGame,e:
-        log_error("Interrupt game")
-        break
-      except socket.error, e:
-        traceback.print_exc(file=sys.stderr)
-        log_error(e.message)
+        request = self.run(request)    
       except Exception, e:
         traceback.print_exc(file=sys.stderr)
         log_error(e.message)
+
+  def run(self,request):            
+    response = self.action(request)       
+    errors = response.errors
+    if len(errors) > 0:
+      for error in errors:
+        log_error("error:%s" % error)          
+    
+    if len(response.planets) > 0:
+      self._start_game("Game begin")
+      if not self.testMode:
+        self.log.start()
+      self.step += 1
+      planets = {}
+
+      for planet in response.planets:
+        p = Planet(planet, planets, self.user)
+        planets[p.id] = p
+
+      request = Request(self.token,planets)      
+      start = datetime.now()
+      try:
+        self.handle(planets, request)
+      except Win, e:
+        self._end_game("You win")        
+      except GameOver, e:
+        self._end_game("Game over")
+      except InterruptGame,e:
+        self._end_game("Interrupt game") 
+
+      delta = datetime.now() - start
+      log_error("step:%s speed:%s" % (self.step,delta.total_seconds()))      
+    return request
+      
     
 

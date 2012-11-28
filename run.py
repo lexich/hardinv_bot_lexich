@@ -18,8 +18,8 @@ if __name__ == "__main__":
   if len(sys.argv) > 1 and sys.argv[1] == "--test":
     from runner.test import TestGame
     g = TestGame(*params)
-    g.run()
+    g.start()
   else:
     from game import Game
     g = Game(*params)
-    g.run()
+    g.start()
