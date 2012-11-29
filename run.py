@@ -12,11 +12,11 @@ params = (
 
 if __name__ == "__main__":
   if len(sys.argv) > 1 and sys.argv[1] == "--visual":
-    from runner.visualtest import Visualize, CustomBaseInteractorStyle,VisualizeGame
+    from test.visualtest import Visualize, CustomBaseInteractorStyle,VisualizeGame
     vis = Visualize(CustomBaseInteractorStyle)
     vis.start(VisualizeGame(*params))
   if len(sys.argv) > 1 and sys.argv[1] == "--test":
-    from runner.test import TestGame
+    from test.test import TestGame
     g = TestGame(*params)
     g.start()
   else:

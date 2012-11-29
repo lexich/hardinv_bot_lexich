@@ -1,4 +1,6 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
+
 from constants import *
 from lib.client import Client
 from helpers import *

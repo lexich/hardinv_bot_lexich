@@ -1,4 +1,6 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
+
 from actions import  GameActions
 from helpers import *
 from strategy import *

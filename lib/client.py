@@ -194,6 +194,3 @@ class Client(ClientBase):
       delta = datetime.now() - start
       log_error("step:%s speed:%s" % (self.step,delta.total_seconds()))      
     return request
-      
-    
-

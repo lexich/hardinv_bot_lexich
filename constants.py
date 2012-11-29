@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 __author__ = 'lexich'
 
@@ -20,8 +21,8 @@ RUNAWAY         = "runaway"
 # [0..1] - используется в стратегии QUICKEXPLORE, RUSH, EXPLORER
 # Устанавливает лимит сопротивления, на которой атака может быть меньше
 # опасности
-QUICKEXPLORE_ATTACK_RESIST  = 0.7
-RUSH_ATTACK_RESIST          = 0.9
+QUICKEXPLORE_ATTACK_RESIST  = 0.6
+RUSH_ATTACK_RESIST          = 0.7
 EXPLORER_ATTACK_RESIST      = 0.7
 PATIENT_ATTACK_RESIST       = 0.9
 

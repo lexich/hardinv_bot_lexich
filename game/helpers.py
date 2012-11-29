@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 __author__ = 'lexich'
 
 def appendInDictOfArrayVal(d, key, value):

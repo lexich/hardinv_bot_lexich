@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import math
 from constants import *
@@ -25,8 +26,9 @@ class MixinStrategies(object):
     """
     if _to.is_enemy:
       return
-    if _from.limit > _to.limit:
-      return
+    # Может конфликтовать
+    #if _from.limit > _to.limit:
+    #  return
     if _from.droids > _to.danger * QUICKEXPLORE_ATTACK_RESIST:
       request.add(
         _from.id,
@@ -61,8 +63,12 @@ class MixinStrategies(object):
           return
 
       #Если опасность угрожает но есть подмога
-      friends = filter(lambda x: x.is_myself, _from.neighbours)
-      maxHelp = sum(map(lambda x: x.attack, friends))
+      friends = filter(
+        lambda x: x.is_myself, _from.neighbours)
+
+      maxHelp = sum(
+        map(
+          lambda x: x.attack, friends))
 
       #Если помощь подмоги достаточна
       if _from.danger < (_from.droids - needToAttack) + maxHelp:
@@ -137,9 +143,14 @@ class MixinStrategies(object):
     #Если текущая планета менее привлектельна нежели соседняя
     #И одновременная атака нас не уничтожит
     #Переселяем всю планету кроме сухого остатка
+    #До достижения лимита
     if _from.limit < _to.limit and\
        (_from.droids - EXPLORER_ATTACK) > _to.danger * EXPLORER_ATTACK_RESIST:
-      request.add(_from.id, _to.id, _from.sendDroids(_from.droids), EXPLORER)
+
+      limitDroids = _to.limit * (1-_to.percent)
+      sendDroids = _from.droids if limitDroids > _from.droids else limitDroids
+      request.add(_from.id, _to.id, _from.sendDroids(sendDroids), EXPLORER)
+
     #Если допустима атака выше атаки исследования и ретинг роста позволяет
     #Начинаем исследование планет
     elif _from.attack > EXPLORER_ATTACK and\
@@ -166,9 +177,8 @@ class MixinStrategies(object):
     #Если максимаотная атака меньше PATIENT_ATTACK_RESIST то отказываемся но
     if maxAttack < _to.danger * PATIENT_ATTACK_RESIST:
       #Но если планета заполнена атакуем в любом случае
-      if _from.growRating(_from.droids) < 3:
+      if _from.growRating(_from.droids) < GAME_RATING_ATTACK:
         request.add(_from.id, _to.id, _from.sendDroids(_from.attack), PATIENT)
-
     else:
       for from_item in to_plan:
         src = from_item[0]
