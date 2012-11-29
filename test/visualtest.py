@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from lib.visualize import BaseInteractorStyle, Visualize, vtk
-from runner.test import TestGame
+from visualize import BaseInteractorStyle, Visualize, vtk
+from test.test import TestGame
 
 class VisualizeGame(TestGame):
   def __init__(self, *args, **kwargs):
