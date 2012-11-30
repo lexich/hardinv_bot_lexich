@@ -58,11 +58,12 @@ class Logger(object):
       count = 0
       for data in type_history:
         filename = os.path.join(self.log_file_dir, "{1}_{0}.xml".format(type, count))
-        try:
-          xml = parseString(data)
-          data = xml.toprettyxml()
-        except Exception,e:
-          print "Logger,exeption %s" % e.message
+        if type == "recv":
+          try:
+            xml = parseString(data)
+            data = xml.toprettyxml()
+          except Exception,e:
+            print "Logger,exeption %s" % e.message
         with open(filename, "w") as f:
           f.write(u"%s" % data)
         count+=1
