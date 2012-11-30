@@ -15,28 +15,25 @@ import os
 with open("log.txt","w") as f:
   f.write("")
 
-def log_error(txt):
+def logDebug(txt):
   try:
     with open("debug.txt","a") as f:
       f.write(txt)
+      f.write("\n")
     print txt
   except Exception,e:
     print("Logger error:%s" % e)
 
-def log(txt):
-  try:
-    with open("log.txt","a") as f:
-      f.write(txt)
-  except Exception,e:
-    print("Logger error:%s" % e)
-
-
-
 class Logger(object):
-  def __init__(self):
+  ROOT_DIR = "log"
+  def __init__(self,host="default"):
     self._start = False
-    self.lof_dir = "log"
-    self.log_file_dir = os.path.join(self.lof_dir, datetime.now().strftime("%Y-%m-%d-%H-%M-%S"))
+    self.host = host
+    self.log_file_dir = os.path.join(
+      self.ROOT_DIR,
+      self.host,
+      datetime.now().strftime("%Y-%m-%d{0}%H-%M-%S".format(os.path.sep))
+    )
     self.history = {}
 
   def start(self):
@@ -49,14 +46,23 @@ class Logger(object):
     self.history[type].append(data)
 
   def flush(self):
-    if not os.path.exists(self.lof_dir):
-      os.mkdir(self.lof_dir)
-    os.mkdir(self.log_file_dir)
+    from xml.dom.minidom import parseString
+    folders = self.log_file_dir.split(os.path.sep)
+    path = ""
+    for folder in folders:
+      path = os.path.join(path,folder)
+      if not os.path.exists(path):
+        os.mkdir(path)
 
     for type, type_history in self.history.iteritems():
       count = 0
       for data in type_history:
         filename = os.path.join(self.log_file_dir, "{1}_{0}.xml".format(type, count))
+        try:
+          xml = parseString(data)
+          data = xml.toprettyxml()
+        except Exception,e:
+          print "Logger,exeption %s" % e.message
         with open(filename, "w") as f:
           f.write(u"%s" % data)
         count+=1
@@ -69,7 +75,7 @@ class ClientBase(object):
     self.host = host
     self.port = port
     self.s = self.connect()
-    self.log = Logger()
+    self.log = Logger(host=host)
     self.step = 0
 
   def connect(self):
@@ -135,19 +141,19 @@ class Client(ClientBase):
           continue
       except socket.error, e:
           traceback.print_exc(file=sys.stderr)
-          log_error(e.message)
+          logDebug(e.message)
       except Exception, e:
         traceback.print_exc(file=sys.stderr)
-        log_error(e.message)
+        logDebug(e.message)
     return root.response
 
   def _start_game(self,txt=""):
     if self.start_game is None:
-      log_error(txt)
+      logDebug(txt)
     self.start_game = True
 
   def _end_game(self,txt=""):
-    log_error(txt)
+    logDebug(txt)
     if not self.testMode:
       self.log.flush()
     self.start_game = False
@@ -160,14 +166,14 @@ class Client(ClientBase):
         request = self.run(request)    
       except Exception, e:
         traceback.print_exc(file=sys.stderr)
-        log_error(e.message)
+        logDebug(e.message)
 
   def run(self,request):            
     response = self.action(request)       
     errors = response.errors
     if len(errors) > 0:
       for error in errors:
-        log_error("error:%s" % error)          
+        logDebug("error:%s" % error)
     
     if len(response.planets) > 0:
       self._start_game("Game begin")
@@ -192,5 +198,5 @@ class Client(ClientBase):
         self._end_game("Interrupt game") 
 
       delta = datetime.now() - start
-      log_error("step:%s speed:%s" % (self.step,delta.total_seconds()))      
+      logDebug("step:%s speed:%s" % (self.step,delta.total_seconds()))
     return request

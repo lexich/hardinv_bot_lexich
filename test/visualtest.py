@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+from lib.request import Request
 from visualize import BaseInteractorStyle, Visualize, vtk
-from test.test import TestGame
+from test import TestGame
 
 class VisualizeGame(TestGame):
   def __init__(self, *args, **kwargs):
@@ -14,14 +15,10 @@ class VisualizeGame(TestGame):
     self.request = request
 
 
-  def run(self):
-    if not self.response:
-      self.response = self.auth()
-    self.response = self._parceResponce(self.response)
-
 class CustomBaseInteractorStyle(BaseInteractorStyle):
   def __init__(self, parent=None):
     BaseInteractorStyle.__init__(self, parent)
+    self.request = Request(token="")
 
   def leftButtonPressEvent(self, obj, event):
     self.g.testStep -=2
@@ -30,7 +27,7 @@ class CustomBaseInteractorStyle(BaseInteractorStyle):
     self.rightButtonPressEvent(obj,event)
 
   def rightButtonPressEvent(self, obj, event):
-    self.g.run()
+    self.request = self.g.run(self.request)
     self.ref.addRepresentation(self.init)
 
   def init(self):

@@ -1,6 +1,7 @@
 .env
 .idea
 log
+old_logs
 *.pyc
 log
 debug.txt
