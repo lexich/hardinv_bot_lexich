@@ -5,8 +5,9 @@ __author__ = 'lexich'
 #Константы
 
 #Рейтинг показывает удовлетворительную
-#скорость прироста дройдов, которая вычисляется speedGrowRating
-SPEED_GROW_RATING = 0.3
+#Минимальную заполненость планеты, чем меньше
+#тем больше планета заполнена
+MIN_PLANET_FILLING_RATING = 0.3
 
 #Стратегии
 AGGRESSIVE      = "aggressive"
@@ -46,7 +47,7 @@ EXPLORER_ATTACK = 10
 # Минимальный рейтин планеты который необходим для начала применения стратегии
 EXPLORER_GROW_RATING = 7
 
-REDISTRIBUTION_MULTIPLICATOR = 2
+REDISTRIBUTION_MULTIPLICATOR = 1.5
 REDISTRIBUTION_MAX_MULTIPLICATOR = 2
 # Устанавливает рейтинг для запертой планеты, для которой
 # не нужно перераспределение

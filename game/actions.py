@@ -7,11 +7,14 @@ from helpers import *
 
 __author__ = 'lexich'
 
+
 class GameActions(Client):
+
   def trySendDroids(self, plan, _from, _to, _strategy=PATIENT):
     """
     strategy [AGGRESSIVE,RUSH,EXPLORER,PATIENT,REDISTRIBUTION,SUPPORT ]
     """
+
     if not _from.is_myself:
       return
     config = [
@@ -67,7 +70,7 @@ class GameActions(Client):
         else:
           #Если переселятся не собираемся
           #Если скорость прироста дройдов больше границы {growSpeedRating}
-          if target.speedGrowRating() > SPEED_GROW_RATING:
+          if target.planetFillingRating() > MIN_PLANET_FILLING_RATING:
             #Если колличество дройдов недостаточно для отправки пропускаем
             if src.droids / src.limit < ACTION_FIXPOSITION_RATING_FILTER:
               continue
@@ -197,6 +200,6 @@ class GameActions(Client):
     Стратегия глобальной поддержки
     """
     for id, target in myPlanets.iteritems():
-      if target.speedGrowRating() > SPEED_GROW_RATING: continue
+      if target.planetFillingRating() > MIN_PLANET_FILLING_RATING: continue
       neigh = sorted(target.neighbours, key=lambda x: x.droids, reverse=True)
       self.trySendDroids(plan, neigh[0], target, SUPPORT)

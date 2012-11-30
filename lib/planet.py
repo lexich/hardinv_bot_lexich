@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import math
 from constants import *
+
 __author__ = 'lexich'
 
 
@@ -48,7 +49,7 @@ class Planet(object):
     #тип планеты
     self.type = obj.type.val
     #актуальное кол-во дройдов
-    self.droids = obj.droids.to_int 
+    self.droids = obj.droids.to_int
     #базовое кол-во дройдов
     self.droids_base = self.droids
     #id сосдей
@@ -77,7 +78,10 @@ class Planet(object):
   def neighbours(self):
     return self.get_neighbours()
 
-  def speedGrowRating(self):
+  def planetFillingRating(self):
+    """
+    Заполненость планеты
+    """
     return self.droids / self.limit
 
   def fullNeighboursDanger(self, equalValue=0, level=0, exclude=set()):
@@ -134,7 +138,7 @@ class Planet(object):
   def is_dead(self):
     dangerResist = 0.7
     if not self.is_myself:
-      myAttack = sum(map(lambda x:x.droids, self.neighboursMyself()))
+      myAttack = sum(map(lambda x: x.droids, self.neighboursMyself()))
       return myAttack < self.danger * dangerResist
     else:
       return self.droids + self.maxMyselfNeighboursAttack() < self.danger * dangerResist
@@ -246,14 +250,14 @@ class Planet(object):
     """
     if not _exclude:
       _exclude = set()
-    #Если найден путь более короткий, данное решение игнорируем
+      #Если найден путь более короткий, данное решение игнорируем
     if roadLimit > 0 and roadLong >= roadLimit:
       return
-    #Исключаем петли
+      #Исключаем петли
 
-    searchNeighbours = filter(lambda x:x==targetPlanet, self.neighbours)
+    searchNeighbours = filter(lambda x: x == targetPlanet, self.neighbours)
     if len(searchNeighbours) > 0:
-      return roadLong,searchNeighbours[0]
+      return roadLong, searchNeighbours[0]
 
     if self.id in _exclude:
       return None
@@ -264,7 +268,7 @@ class Planet(object):
     for p in self.neighbours:
       if p.id in _exclude: continue
       result = p.searchPathToTarget(targetPlanet, roadLong + 1, roadLimit, set(_exclude))
-      if result and (roadLimit==0 or roadLimit > result[0]):
+      if result and (roadLimit == 0 or roadLimit > result[0]):
         roadLimit = result[0]
         searchPath = p
     return roadLimit, searchPath
@@ -279,4 +283,19 @@ class Planet(object):
     property = self.PROPERTY.get(self.type, {})
     return property.get("limit", 0)
 
-
+  def to_xml(self):
+    return '''
+    <planet id="%(id)s">
+      <owner>%(owner)s</owner>
+      <type>%(type)s</type>
+      <droids>%(droids)s</droids>
+      <neighbours>
+        %(neighbours)s
+      </neighbours>
+    </planet>''' % {
+      "id": self.id,
+      "owner": self.owner,
+      "type": self.type,
+      "droids": self.droids,
+      "neighbours": "\n".join(["<neighbour>%s</neighbour>" % x for x in self._neighbours])
+    }
