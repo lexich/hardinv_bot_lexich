@@ -5,12 +5,6 @@ from optparse import OptionParser
 
 __author__ = 'lexich'
 
-params = [
-  "hardinv.ru",
-  10040,
-  "h2oz5rnaepbcvn1uuq2elkvaw63nhpv1",
-  "lexich"
-]
 DEFAULT_TOKEN = "h2oz5rnaepbcvn1uuq2elkvaw63nhpv1"
 DEFAULT_USER = "lexich"
 DEFAULT_HOST = "hardinv.ru"
